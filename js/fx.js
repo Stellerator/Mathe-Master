@@ -12,39 +12,33 @@ function setup(){
   if(ctx) return ctx.state==="suspended"?ctx.resume():0;
   const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
   ctx=new AC();
-  const master=ctx.createGain(); master.gain.value=0.16; master.connect(ctx.destination);
-  // Hall aus erzeugtem Rauschen (exponentiell abklingend)
-  const len=Math.floor(ctx.sampleRate*2.2), buf=ctx.createBuffer(2,len,ctx.sampleRate);
+  const master=ctx.createGain(); master.gain.value=0.11; master.connect(ctx.destination);
+  // Hall aus erzeugtem Rauschen (exponentiell abklingend), kein Echo
+  const len=Math.floor(ctx.sampleRate*1.6), buf=ctx.createBuffer(2,len,ctx.sampleRate);
   for(let c=0;c<2;c++){ const d=buf.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2); }
   const verb=ctx.createConvolver(); verb.buffer=buf; const vg=ctx.createGain(); vg.gain.value=0.55; verb.connect(vg); vg.connect(master);
-  // Echo
-  const dl=ctx.createDelay(1); dl.delayTime.value=0.27; const fb=ctx.createGain(); fb.gain.value=0.32;
-  const lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=2400;
-  dl.connect(lp); lp.connect(fb); fb.connect(dl); lp.connect(verb); lp.connect(master);
-  bus=ctx.createGain(); bus.gain.value=1; bus.connect(master); bus.connect(verb); bus.connect(dl);
+  // weicher Klang: hohe Anteile wegfiltern
+  const lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1100; lp.Q.value=0.4;
+  bus=ctx.createGain(); bus.gain.value=1; bus.connect(lp); lp.connect(master); lp.connect(verb);
   return ctx.state==="suspended"?ctx.resume():0;
 }
-function note(freq,t0,{dur=1.4,vol=0.5,type="sine",glide=0}={}){
+function note(freq,t0,{dur=0.42,vol=0.5,glide=0}={}){
   const t=ctx.currentTime+t0, o=ctx.createOscillator(), g=ctx.createGain();
-  o.type=type; o.frequency.setValueAtTime(freq,t); if(glide) o.frequency.exponentialRampToValueAtTime(freq*glide,t+dur*0.6);
-  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.012); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-  o.connect(g); g.connect(bus);
-  // leiser Oberton für den Glockencharakter
-  const o2=ctx.createOscillator(), g2=ctx.createGain(); o2.type="sine"; o2.frequency.setValueAtTime(freq*2.76,t);
-  g2.gain.setValueAtTime(0.0001,t); g2.gain.exponentialRampToValueAtTime(vol*0.16,t+0.008); g2.gain.exponentialRampToValueAtTime(0.0001,t+dur*0.35);
-  o2.connect(g2); g2.connect(bus);
-  o.start(t); o.stop(t+dur+0.05); o2.start(t); o2.stop(t+dur*0.4);
+  o.type="sine"; o.frequency.setValueAtTime(freq,t); if(glide) o.frequency.exponentialRampToValueAtTime(freq*glide,t+dur*0.8);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.018); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(bus); o.start(t); o.stop(t+dur+0.05);
 }
-const N={C5:523.25,D5:587.33,E5:659.25,G5:783.99,A5:880,C6:1046.5,D6:1174.7,E6:1318.5,G6:1568,A4:440,E4:329.63,D4:293.66,G4:392};
+// tiefe Lage (etwa 160 bis 520 Hz)
+const N={F3:174.6,A3:220,C4:261.6,E4:329.6,G4:392,C5:523.3};
 function play(fn){ if(!on) return; try{ const r=setup(); if(r&&r.then) r.then(()=>{ try{fn();}catch(e){} }); else fn(); }catch(e){} }
 const Snd={
-  ok(){ play(()=>{ note(N.E5,0,{vol:.45}); note(N.A5,0.11,{vol:.4,dur:1.7}); }); },
-  card(){ play(()=>{ note(N.G5,0,{vol:.4}); note(N.C6,0.1,{vol:.4}); note(N.E6,0.22,{vol:.32,dur:1.9}); }); },
-  bad(){ play(()=>{ note(N.D4,0,{vol:.32,dur:0.9,glide:.94}); }); },
-  level(perfect){ play(()=>{ [N.C5,N.E5,N.G5,N.C6].forEach((f,i)=>note(f,i*0.13,{vol:.42,dur:2}));
-    if(perfect) [N.E6,N.G6].forEach((f,i)=>note(f,0.62+i*0.12,{vol:.28,dur:2.4})); }); },
-  miss(){ play(()=>{ note(N.G4,0,{vol:.3,dur:1.2}); note(N.E4,0.18,{vol:.28,dur:1.5}); }); },
-  pop(){ play(()=>{ note(N.D6,0,{vol:.18,dur:.5}); }); }
+  ok(){ play(()=>{ note(N.A3,0,{vol:.5}); note(N.E4,0.075,{vol:.42,dur:.5}); }); },
+  card(){ play(()=>{ note(N.C4,0,{vol:.45}); note(N.E4,0.07,{vol:.4}); note(N.G4,0.14,{vol:.34,dur:.55}); }); },
+  bad(){ play(()=>{ note(N.F3,0,{vol:.4,dur:.3,glide:.94}); }); },
+  level(perfect){ play(()=>{ [N.C4,N.E4,N.G4,N.C5].forEach((f,i)=>note(f,i*0.09,{vol:.42,dur:.6}));
+    if(perfect) note(N.G4*2,0.4,{vol:.22,dur:.7}); }); },
+  miss(){ play(()=>{ note(N.A3,0,{vol:.35,dur:.4}); note(N.F3,0.11,{vol:.35,dur:.5}); }); },
+  pop(){ play(()=>{ note(N.A3,0,{vol:.3,dur:.22}); }); }
 };
 
 /* ---------- Animationen ---------- */
