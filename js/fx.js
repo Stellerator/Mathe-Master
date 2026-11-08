@@ -6,39 +6,50 @@ const KEY="mathe-master-sound";
 let on=true; try{ on=localStorage.getItem(KEY)!=="0"; }catch(e){}
 const reduce = ()=>window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/* ---------- Klang: weiche Sinus-Glocken mit Echo und Hall ---------- */
+/* ---------- Klang: weiche Sinus-Töne mit Hall, kein Echo ---------- */
+/* ===== HIER EINSTELLEN ===== */
+const LAUT   = 0.30;   // Gesamtlautstärke (0.1 = sehr leise, 0.3 = dezent hörbar, 0.6 = deutlich)
+const TIEFE  = 1.0;    // Tonhöhe: 1 = wie eingestellt, 0.5 = eine Oktave tiefer, 2 = eine Oktave höher
+const HALL   = 0.55;   // Hallanteil (0 = trocken, 0.55 = wie bisher, 1 = viel Hall)
+const HELLE  = 1800;   // Filter in Hz: kleiner = dumpfer, größer = heller
+const LAENGE = 1.0;    // Ausklingzeit: 1 = wie eingestellt, 0.5 = halb so lang, 2 = doppelt so lang
+/* =========================== */
+
 let ctx=null, bus=null;
 function setup(){
   if(ctx) return ctx.state==="suspended"?ctx.resume():0;
   const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
   ctx=new AC();
-  const master=ctx.createGain(); master.gain.value=0.11; master.connect(ctx.destination);
-  // Hall aus erzeugtem Rauschen (exponentiell abklingend), kein Echo
+  const master=ctx.createGain(); master.gain.value=LAUT; master.connect(ctx.destination);
+  // Hall aus erzeugtem Rauschen (exponentiell abklingend)
   const len=Math.floor(ctx.sampleRate*1.6), buf=ctx.createBuffer(2,len,ctx.sampleRate);
   for(let c=0;c<2;c++){ const d=buf.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2); }
-  const verb=ctx.createConvolver(); verb.buffer=buf; const vg=ctx.createGain(); vg.gain.value=0.55; verb.connect(vg); vg.connect(master);
-  // weicher Klang: hohe Anteile wegfiltern
-  const lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1100; lp.Q.value=0.4;
+  const verb=ctx.createConvolver(); verb.buffer=buf; const vg=ctx.createGain(); vg.gain.value=HALL; verb.connect(vg); vg.connect(master);
+  // Weichzeichner: nimmt hohe Anteile weg
+  const lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=HELLE; lp.Q.value=0.4;
   bus=ctx.createGain(); bus.gain.value=1; bus.connect(lp); lp.connect(master); lp.connect(verb);
   return ctx.state==="suspended"?ctx.resume():0;
 }
-function note(freq,t0,{dur=0.42,vol=0.5,glide=0}={}){
+// Ein Ton: freq in Hz, t0 = Startverzögerung in s, dur = Dauer in s, vol = Lautstärke 0..1, glide = Tonhöhenänderung (z. B. 0.94 = leicht abwärts)
+function note(freq,t0,{dur=0.5,vol=0.5,glide=0}={}){
+  freq*=TIEFE; dur*=LAENGE;
   const t=ctx.currentTime+t0, o=ctx.createOscillator(), g=ctx.createGain();
   o.type="sine"; o.frequency.setValueAtTime(freq,t); if(glide) o.frequency.exponentialRampToValueAtTime(freq*glide,t+dur*0.8);
-  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.018); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
   o.connect(g); g.connect(bus); o.start(t); o.stop(t+dur+0.05);
 }
-// tiefe Lage (etwa 160 bis 520 Hz)
-const N={F3:174.6,A3:220,C4:261.6,E4:329.6,G4:392,C5:523.3};
+// Tonvorrat in Hz
+const N={F3:174.6,A3:220,C4:261.6,E4:329.6,G4:392,A4:440,C5:523.3,E5:659.3,G5:784};
 function play(fn){ if(!on) return; try{ const r=setup(); if(r&&r.then) r.then(()=>{ try{fn();}catch(e){} }); else fn(); }catch(e){} }
+// Die Klänge: note(Ton, Start, {dur, vol})
 const Snd={
-  ok(){ play(()=>{ note(N.A3,0,{vol:.5}); note(N.E4,0.075,{vol:.42,dur:.5}); }); },
-  card(){ play(()=>{ note(N.C4,0,{vol:.45}); note(N.E4,0.07,{vol:.4}); note(N.G4,0.14,{vol:.34,dur:.55}); }); },
-  bad(){ play(()=>{ note(N.F3,0,{vol:.4,dur:.3,glide:.94}); }); },
-  level(perfect){ play(()=>{ [N.C4,N.E4,N.G4,N.C5].forEach((f,i)=>note(f,i*0.09,{vol:.42,dur:.6}));
-    if(perfect) note(N.G4*2,0.4,{vol:.22,dur:.7}); }); },
-  miss(){ play(()=>{ note(N.A3,0,{vol:.35,dur:.4}); note(N.F3,0.11,{vol:.35,dur:.5}); }); },
-  pop(){ play(()=>{ note(N.A3,0,{vol:.3,dur:.22}); }); }
+  ok(){ play(()=>{ note(N.E4,0,{vol:.6,dur:.5}); note(N.A4,0.08,{vol:.5,dur:.6}); }); },                                   // richtige Antwort
+  card(){ play(()=>{ note(N.C4,0,{vol:.55}); note(N.E4,0.08,{vol:.5}); note(N.G4,0.16,{vol:.45,dur:.65}); }); },          // Mini-Check gelöst
+  bad(){ play(()=>{ note(N.A3,0,{vol:.45,dur:.35,glide:.9}); }); },                                                       // falsch
+  level(perfect){ play(()=>{ [N.C4,N.E4,N.G4,N.C5].forEach((f,i)=>note(f,i*0.1,{vol:.55,dur:.7}));                           // Level geschafft
+    if(perfect){ note(N.E5,0.45,{vol:.35,dur:.8}); note(N.G5,0.55,{vol:.3,dur:.9}); } }); },
+  miss(){ play(()=>{ note(N.A3,0,{vol:.45,dur:.45}); note(N.F3,0.12,{vol:.45,dur:.55}); }); },                             // Level verfehlt
+  pop(){ play(()=>{ note(N.A3,0,{vol:.4,dur:.25}); }); }                                                                   // Ton-Schalter
 };
 
 /* ---------- Animationen ---------- */
