@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mathe-Master">
+<meta name="theme-color" content="#eef3f6">
+<title>Mathe-Master</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="app"></div>
+<noscript>Für den Mathe-Master wird JavaScript benötigt.</noscript>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="js/core.js"></script>
+<script src="js/terms.js"></script>
+<script src="js/tasks.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/ui.js"></script>
+<script src="kapitel/liste.js"></script>
+<script src="kapitel/mathegym.js"></script>
+<script>MM.start();
+if("serviceWorker" in navigator){ window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }</script>
+</body>
+</html>
