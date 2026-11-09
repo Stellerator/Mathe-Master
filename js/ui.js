@@ -6,6 +6,7 @@ const {el,shuffle,one,T,tex,cleanup,mkcv,LOBW,PRO_LEVEL,HUERDE} = MM;
 const app = document.getElementById("app");
 const CHEVRON = `<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M7 4l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const LOCK = `<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="3" y="8" width="12" height="8" rx="2" fill="currentColor"/><path d="M5.5 8V6a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+const DUMBBELL = `<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M5.5 9h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3" y="4.8" width="2.6" height="8.4" rx="1" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="12.4" y="4.8" width="2.6" height="8.4" rx="1" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M1.2 7.2v3.6M16.8 7.2v3.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 const BOOK = `<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 3.5C4.5 2.5 7 2.7 9 4.2c2-1.5 4.5-1.7 7-.7v10.3c-2.5-1-5-.8-7 .7-2-1.5-4.5-1.7-7-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 4.2v10.3" stroke="currentColor" stroke-width="1.8"/></svg>`;
 
 /* ---------- Speicher ---------- */
@@ -73,7 +74,7 @@ function mathegymModal(kid){
   const row=el("div",{class:"mrow"}); const c=el("button",{class:"btn ghost"},"Schließen"); row.appendChild(c); box.appendChild(row);
   const close=openModal(box); c.addEventListener("click",close); }
 function mgButton(kid){ const n=(MM.MATHEGYM[kid]||[]).length; if(!n&&!teacher) return null;
-  const b=el("button",{class:"toolbtn mg"+(n?"":" empty")},"Üben im Mathegym"+(n?"":" (leer)")); b.addEventListener("click",()=>mathegymModal(kid)); return b; }
+  const b=el("button",{class:"toolbtn mg"+(n?"":" empty"),"aria-label":"Üben im Mathegym"},`${DUMBBELL}Mathegym`+(n?"":" (leer)")); b.addEventListener("click",()=>mathegymModal(kid)); return b; }
 
 /* ---------- Lehrkraft-Modus: 4 s auf das Logo + PIN ---------- */
 function pinDialog(onOk){
@@ -175,10 +176,35 @@ function resetDialog(){
   const close=openModal(box); no.addEventListener("click",close);
   go.addEventListener("click",()=>{ if(inp.value.trim().toLowerCase()!=="ja") return; P={cards:{},lv:{},best:{}}; save(); close(); renderHome(); });
   setTimeout(()=>{ try{ inp.focus(); }catch(e){} },50); }
+/* Aktualisieren: holt alle App-Dateien frisch vom Server (am Browser-Zwischenspeicher vorbei), erneuert die gespeicherte Offline-Kopie und lädt neu.
+   Fortschritt, ID und Einstellungen liegen im localStorage und bleiben unberührt. Nur Caches mit dem Namen „mathe-master-…“ werden angefasst. */
+async function updateNow(btn,stat){
+  const say=(t,bad)=>{ stat.textContent=t; stat.className="fstat"+(bad?" bad":""); };
+  if(navigator.onLine===false){ say("Kein Netz. Die gespeicherte Version bleibt erhalten.",true); return; }
+  btn.disabled=true; say("Hole die neueste Version …");
+  try{
+    const abs=u=>new URL(u,location.href).href;
+    const urls=new Set([location.pathname,"index.html","sw.js","manifest.webmanifest"].map(abs));
+    document.querySelectorAll("script[src],link[rel=stylesheet][href]").forEach(n=>urls.add(abs(n.getAttribute("src")||n.getAttribute("href"))));
+    MM.LISTE.forEach(e=>{ if(e.datei) urls.add(abs(e.datei+"?v="+MM.VERSION+"-"+MM.STAND)); });
+    const must=["index.html","js/core.js","js/ui.js","app.css"].map(abs);
+    const got=[]; let fail=false;
+    await Promise.all([...urls].map(async u=>{
+      try{ const r=await fetch(u,{cache:"reload"}); if(r.ok) got.push([u,r]); else if(must.includes(u.split("?")[0])) fail=true; }
+      catch(e){ fail=true; } }));
+    if(fail||!must.every(m=>got.some(g=>g[0].split("?")[0]===m))){ say("Kein Netz oder Server nicht erreichbar. Die gespeicherte Version bleibt erhalten.",true); btn.disabled=false; return; }
+    if(window.caches){ const names=(await caches.keys()).filter(n=>n.startsWith("mathe-master-"));
+      for(const n of names){ const c=await caches.open(n);
+        for(const [u,r] of got){ const x=new URL(u); try{ await c.put(x.origin+x.pathname,r.clone()); }catch(e){} } } }
+    if(navigator.serviceWorker){ try{ const reg=await navigator.serviceWorker.getRegistration(); if(reg) await reg.update(); }catch(e){} }
+    say("Aktualisiert. Die App lädt neu …"); setTimeout(()=>location.reload(),500);
+  }catch(e){ say("Das hat nicht geklappt. Die gespeicherte Version bleibt erhalten.",true); btn.disabled=false; } }
 function footer(){
-  const ft=el("footer",{},`<span>Mathe-Master · Version ${MM.VERSION} · Stand ${MM.STAND}</span>`);
+  const ft=el("footer",{},`<div class="finfo"><span>Mathe-Master · Version ${MM.VERSION} · Stand ${MM.STAND}</span><span class="fstat" role="status"></span></div>`);
+  const stat=ft.querySelector(".fstat"), grp=el("div",{class:"fbtns"});
+  const up=el("button",{class:"linkbtn"},"Aktualisieren"); up.addEventListener("click",()=>updateNow(up,stat));
   const rs=el("button",{class:"linkbtn"},"Fortschritt zurücksetzen"); rs.addEventListener("click",resetDialog);
-  ft.appendChild(rs); app.appendChild(ft); }
+  grp.append(up,rs); ft.appendChild(grp); app.appendChild(ft); }
 
 /* ---------- Steckbriefe ---------- */
 function renderFocus(k,start){
