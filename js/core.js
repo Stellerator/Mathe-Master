@@ -3,7 +3,7 @@
 "use strict";
 const MM = window.MM = window.MM || {};
 let MM_tn;
-MM.VERSION = "1.1"; MM.STAND = "08.11.2026";
+MM.VERSION = "1.2"; MM.STAND = "09.11.2026";
 MM.kapitel = MM.kapitel || {}; MM.LISTE = MM.LISTE || []; MM.MATHEGYM = MM.MATHEGYM || {};
 MM.PRO_LEVEL = 5; MM.HUERDE = 4;   // 5 Aufgaben je Level, bestanden mit 4 Treffern im ersten Versuch
 

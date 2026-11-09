@@ -119,11 +119,12 @@ function renderHome(){
   brand.append(logo,el("div",{},`<h1>Mathe-Master</h1><p>TG Eingangsklasse · Mathematik</p>`));
   const tabs=el("nav",{class:"tabs","aria-label":"Kapitel"});
   if(teacher){ const tb=el("button",{class:"teacher"},"Lehrkraft-Modus: alles frei ✕"); tb.addEventListener("click",()=>setTeacher(false)); tabs.appendChild(tb); }
-  const k=curK();
-  MM.LISTE.forEach(e=>{ const ok=isOk(e.id); const b=el("button",{class:"tab"+(ok?"":" soon"),"aria-pressed":String(ok&&k&&k.id===e.id)},
-      `<span class="nr">${e.nr}</span>${e.titel}${ok?"":(status[e.id]==="ab"&&e.ab?` <span class="tag-s">ab ${fmtDate(e.ab)}</span>`:' <span class="tag-s">folgt</span>')}`);
+  const k=curK(); const chaps=el("div",{class:"chaps"});
+  MM.LISTE.forEach(e=>{ const ok=isOk(e.id); const b=el("button",{class:"tab"+(ok?"":" soon"),"aria-pressed":String(ok&&k&&k.id===e.id),"aria-label":`Kapitel ${e.nr}: ${e.titel}`,title:e.titel},
+      `<span class="nr">${e.nr}</span><span class="tt">${e.titel}${ok?"":(status[e.id]==="ab"&&e.ab?` <span class="tag-s">ab ${fmtDate(e.ab)}</span>`:' <span class="tag-s">folgt</span>')}</span>`);
     if(!ok){ b.setAttribute("aria-disabled","true"); b.title="Wird später freigeschaltet"; } else b.addEventListener("click",()=>{ aktK=e.id; try{ localStorage.setItem(KAP_KEY,aktK); }catch(_){} renderHome(); });
-    tabs.appendChild(b); });
+    chaps.appendChild(b); });
+  tabs.appendChild(chaps); requestAnimationFrame(()=>{ const sel=chaps.querySelector('[aria-pressed="true"]'); if(sel) chaps.scrollLeft=Math.max(0,sel.offsetLeft-12); });
   if(MM.Nachweis) MM.Nachweis.homeButtons(teacher).forEach(b=>tabs.appendChild(b));
   tabs.appendChild(themeSwitch());
   top.append(brand,tabs); app.appendChild(top);
@@ -161,11 +162,22 @@ function renderHome(){
   if(next2) home.appendChild(el("div",{class:"locked-k"},`Nächstes Kapitel: <b>${next2.titel}</b>. Es wird freigeschaltet, wenn es im Unterricht dran ist.`));
   app.appendChild(home); footer();
 }
+function resetDialog(){
+  const box=el("div",{style:"display:flex;flex-direction:column;gap:12px"});
+  box.appendChild(el("h3",{},"Fortschritt wirklich löschen?"));
+  box.appendChild(el("p",{},"Dabei werden <b>alle Mini-Checks, Levels, Siegel und Bestwerte</b> auf diesem Gerät gelöscht. Das lässt sich nicht rückgängig machen."));
+  if(MM.Nachweis&&MM.Nachweis.ident) box.appendChild(el("p",{class:"muted"},"Du kannst ihn nur zurückholen, wenn du die gesendete Datei oder den Stand-Code noch hast (unter „Meine Erfolge“ → „Stand wiederherstellen“)."));
+  box.appendChild(el("p",{class:"muted"},"Zum Bestätigen tippe das Wort <b>ja</b> ein."));
+  const inp=el("input",{type:"text",autocapitalize:"none",autocomplete:"off",autocorrect:"off",spellcheck:"false","aria-label":"Zur Bestätigung ja eingeben",placeholder:"ja",style:"max-width:200px"});
+  const go=el("button",{class:"btn danger",disabled:"true"},"Alles löschen"), no=el("button",{class:"btn ghost"},"Abbrechen");
+  inp.addEventListener("input",()=>{ go.disabled=inp.value.trim().toLowerCase()!=="ja"; });
+  const row=el("div",{class:"mrow"}); row.append(no,go); box.append(inp,row);
+  const close=openModal(box); no.addEventListener("click",close);
+  go.addEventListener("click",()=>{ if(inp.value.trim().toLowerCase()!=="ja") return; P={cards:{},lv:{},best:{}}; save(); close(); renderHome(); });
+  setTimeout(()=>{ try{ inp.focus(); }catch(e){} },50); }
 function footer(){
   const ft=el("footer",{},`<span>Mathe-Master · Version ${MM.VERSION} · Stand ${MM.STAND}</span>`);
-  const rs=el("button",{class:"linkbtn"},"Fortschritt zurücksetzen"); let armT;
-  rs.addEventListener("click",()=>{ if(rs.classList.contains("arm")){ P={cards:{},lv:{},best:{}}; save(); renderHome(); return; }
-    rs.classList.add("arm"); rs.textContent="Wirklich? Nochmal tippen"; clearTimeout(armT); armT=setTimeout(()=>{ rs.classList.remove("arm"); rs.textContent="Fortschritt zurücksetzen"; },3000); });
+  const rs=el("button",{class:"linkbtn"},"Fortschritt zurücksetzen"); rs.addEventListener("click",resetDialog);
   ft.appendChild(rs); app.appendChild(ft); }
 
 /* ---------- Steckbriefe ---------- */

@@ -32,7 +32,7 @@ Zu neuen Kapiteln brauchst du eine neue Version dieser Datei (sie kennt die Kapi
 Dezente Klänge bei Erfolgen. Schalter (Lautsprecher-Symbol) oben rechts neben Hell/Auto/Dunkel.
 
 ## Neue Version veröffentlichen
-Dateien im Repo ersetzen. Bei Netz lädt die App immer die neueste Version, ohne Netz nutzt sie die gespeicherte Kopie. Optional `MM.STAND` in `js/core.js` anpassen.
+Dateien im Repo ersetzen. Bei Netz lädt die App immer die neueste Version, ohne Netz nutzt sie die gespeicherte Kopie. Optional `MM.STAND` in `js/core.js` anpassen. **Für den Update-Hinweis** („Neue Version verfügbar“, erscheint beim Zurückkehren in die App, auch vom Home-Bildschirm) bei jeder Veröffentlichung `MM.VERSION` oder `MM.STAND` in `js/core.js` ändern. Sonst erkennen die Geräte die neue Fassung nicht.
 
 ## Offline
 `sw.js` speichert alle Dateien. Ein Kapitel, das erst nach dem letzten Netz-Besuch freigeschaltet wurde, braucht einmal Netz zum Laden. Der Lernstand liegt im Speicher des Geräts (Safari und Home-Bildschirm-App haben getrennten Speicher).
