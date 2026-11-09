@@ -20,14 +20,14 @@ MM.LISTE = [
 ];
 
 /* ============================================================
-   ABGABE · Wohin schicken die SuS ihren Stand (Pokalregal → „Stand senden“)?
+   ABGABE · Wohin schicken die SuS ihren Stand (Meine Erfolge → „Stand senden“)?
 
    Standard: Der Teilen-Dialog des iPads. Dort wählen die SuS „Documents“ oder „Dateien“
    und legen die Datei im Ordner „Nachweise“ ab.
    url:     Link zum Abgabe-Ordner (z. B. Nextcloud „Datei-Anfrage“). Er erscheint als Knopf
             im Senden-Fenster. Leer lassen, wenn du ihn nicht brauchst.
    hinweis: Kurzer Satz, der im Senden-Fenster steht.
-   tage:    Nach so vielen Tagen ohne Sicherung färbt sich die Anzeige im Pokalregal orange.
+   tage:    Nach so vielen Tagen ohne Sicherung färbt sich die Anzeige in „Meine Erfolge“ orange.
    ============================================================ */
 MM.ABGABE = {
   url: "",

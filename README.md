@@ -12,8 +12,8 @@ In `kapitel/mathegym.js` je Kapitel Einträge `{titel, wo, hinweis, url}` eintra
 ## Lehrkraft-Modus
 Logo links oben 4 Sekunden gedrückt halten, dann PIN eingeben. Die PIN steht in `kapitel/liste.js` (`MM.PIN`, Voreinstellung 2605). Sie ist im Quelltext lesbar und dient nur als Hürde für Schülerinnen und Schüler, nicht als Sicherheit.
 
-## Nachweis: Pokalregal, Aktivierungscode, Abgabe
-**Ablauf für die Klasse:** Pokal-Symbol (Startseite, neben den Kapiteln) → Aktivierungscode eingeben (einmalig) → „Stand senden“ → Datei im Ordner „Nachweise“ ablegen (Teilen-Dialog → Documents).
+## Nachweis: Meine Erfolge, Siegel, Aktivierungscode, Abgabe
+**Ablauf für die Klasse:** Siegel-Symbol „Meine Erfolge“ (Startseite, neben den Kapiteln) → Aktivierungscode eingeben (einmalig) → „Stand senden“ → Datei im Ordner „Nachweise“ ablegen (Teilen-Dialog → Documents).
 
 **Lehrkraft-Werkzeug:** Die Datei `Mathe-Master-Nachweise.html` liegt **nicht** in diesem Repo. Sie wird auf dem PC per Doppelklick im Browser geöffnet (funktioniert offline, nichts wird hochgeladen).
 1. Hauptpasswort wählen (langer Satz). Es steht nicht in der App und wird nicht gespeichert. Das Kontrollkürzel zeigt, ob du es später gleich eingegeben hast. Ohne dieses Passwort lassen sich die Nachweise nicht mehr prüfen. Sicher aufbewahren.
@@ -24,7 +24,7 @@ Zu neuen Kapiteln brauchst du eine neue Version dieser Datei (sie kennt die Kapi
 
 **Abgabe einstellen:** `MM.ABGABE` in `kapitel/liste.js` (Link zum Ordner, Hinweistext, Erinnerungstage).
 
-**Stand verloren?** Pokal-Symbol → „Stand wiederherstellen“ mit der zuletzt gesendeten Datei oder dem Stand-Code (nur mit dem eigenen Aktivierungscode möglich). Die App bittet das Gerät, den Speicher zu behalten. Wichtig: Safari und die Home-Bildschirm-App haben getrennten Speicher. Die SuS sollten nur die Home-Bildschirm-App benutzen.
+**Stand verloren?** Siegel-Symbol „Meine Erfolge“ → „Stand wiederherstellen“ mit der zuletzt gesendeten Datei oder dem Stand-Code (nur mit dem eigenen Aktivierungscode möglich). Die App bittet das Gerät, den Speicher zu behalten. Wichtig: Safari und die Home-Bildschirm-App haben getrennten Speicher. Die SuS sollten nur die Home-Bildschirm-App benutzen.
 
 **Grenzen:** Jede Person kennt ihren eigenen Schlüssel und könnte mit Entwicklerwerkzeugen den eigenen Stand fälschen. Fremde IDs lassen sich nicht fälschen. Für Übungsnachweise reicht das, die KA bleibt der Leistungsnachweis. Die Aktivierung wird nur im Lehrkraft-Modus entfernt (Pokalregal).
 

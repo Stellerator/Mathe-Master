@@ -414,7 +414,7 @@ footer{margin-top:28px;display:flex;justify-content:space-between;align-items:ce
   .fside .cv.sq{height:min(92vw,470px)}
 }
 
-/* ===== Nachweis: Pokalregal, Senden, Lehrkraft-Prüfung ===== */
+/* ===== Nachweis: Meine Erfolge, Siegel, Senden ===== */
 :root{ --gold:#e0a21a; --gold-soft:#fbf1d6; --silver:#a9b6c1; --bronze:#c6874f; }
 :root[data-theme="dark"]{ --gold-soft:#3a2d0c; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --gold-soft:#3a2d0c; } }
@@ -449,6 +449,12 @@ footer{margin-top:28px;display:flex;justify-content:space-between;align-items:ce
 .trophy-card.full .tst{color:var(--gold)}
 .trophy-card.locked{border-style:dashed;background:transparent;color:var(--muted);cursor:default}
 .trophy-card .stamp{font-family:var(--font-mono);font-weight:800;font-size:26px}
+.seal{position:absolute;bottom:10px;right:10px;width:44px;height:44px}
+.seal .sb{fill:var(--gold);stroke:#b98308;stroke-width:1.5;stroke-linejoin:round}
+.seal .si{fill:none;stroke:rgba(255,255,255,.75);stroke-width:2.5}
+.seal .sc{fill:none;stroke:#2a1a08;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+.seal.off .sb{fill:none;stroke:var(--line);stroke-width:2.5;stroke-dasharray:4 4}
+.trophy-card.locked .seal{opacity:.5}
 .medals{display:flex;gap:8px}
 .medal{position:relative;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-weight:800;font-size:15px;border:2px dashed var(--line);color:var(--muted)}
 .medal.on{border-style:solid;color:#2a1a08;box-shadow:inset 0 -3px 0 rgba(0,0,0,.14),0 1px 2px rgba(0,0,0,.18)}

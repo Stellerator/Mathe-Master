@@ -1,10 +1,14 @@
-/* Mathe-Master · Pokalregal, Aktivierung, Stand senden und wiederherstellen (Schüleransicht) */
+/* Mathe-Master · Meine Erfolge (Siegel), Aktivierung, Stand senden und wiederherstellen (Schüleransicht) */
 (function(){
 "use strict";
 const MM = window.MM, Pr = MM.Proof, UI = () => MM.UI;
 const el = (t,a,h)=>MM.el(t,a,h);
 const IDKEY = "mathe-master-id";
-const TROPHY = `<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 3h8v5a4 4 0 0 1-8 0z" fill="currentColor"/><path d="M6 4.5H3.5c0 3 1.3 4.4 3 4.6M14 4.5h2.5c0 3-1.3 4.4-3 4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10 12v3M6.5 17h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+/* Siegel: gezackte Rosette, optional mit Haken. n Zacken, Außen- und Innenradius */
+function burst(n,ro,ri,c){ let d=""; for(let i=0;i<n*2;i++){ const r=i%2?ri:ro, a=Math.PI*i/n-Math.PI/2; d+=(i?"L":"M")+(c+r*Math.cos(a)).toFixed(2)+" "+(c+r*Math.sin(a)).toFixed(2); } return d+"Z"; }
+const BURST=burst(14,47,41,50);
+const SEAL_ICON=`<svg width="22" height="22" viewBox="0 0 100 100" aria-hidden="true"><path d="${BURST}" fill="currentColor"/><path d="M30 51l14 14 27-30" fill="none" stroke="var(--surface)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+function seal(on){ if(!on) return ""; return `<svg class="seal${on?" on":" off"}" viewBox="0 0 100 100" aria-hidden="true"><path class="sb" d="${BURST}"/>${on?'<circle class="si" cx="50" cy="50" r="31"/><path class="sc" d="M33 51l12 12 23-26"/>':''}</svg>`; }
 const cfg = () => Object.assign({url:"",hinweis:"",tage:7}, MM.ABGABE||{});
 
 /* ---------- Identität (Aktivierungscode) ---------- */
@@ -21,17 +25,17 @@ function note(host,txt,cls){ host.textContent=txt; host.className="nmsg"+(cls?" 
 function copyText(t){ return (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t):Promise.reject()).catch(()=>{
   const ta=document.createElement("textarea"); ta.value=t; ta.style.cssText="position:fixed;opacity:0"; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); }catch(e){} ta.remove(); }); }
 function download(file){ const a=document.createElement("a"); a.href=URL.createObjectURL(file); a.download=file.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }
-function counts(){ // zählt Pokale (komplette Challenges) und Medaillen (bestandene Levels) über alle freigeschalteten Kapitel
-  const u=UI(); let pokale=0,pokaleMax=0,med=0,medMax=0;
+function counts(){ // zählt gemeisterte Ziele (Steckbriefe komplett, Challenge mit allen 3 Levels) und bestandene Levels über alle freigeschalteten Kapitel
+  const u=UI(); let gem=0,gemMax=0,med=0,medMax=0;
   u.okIds().forEach(id=>{ const k=u.getK(id); if(!k) return; const D=k.def;
-    pokaleMax+=1+D.challOrder.length; if(u.cardsDone(k)) pokale++;
-    D.challOrder.forEach(typ=>{ const n=[0,1,2].filter(i=>u.lvPassed(u.chId(k,typ),i)).length; med+=n; medMax+=3; if(n===3) pokale++; }); });
-  return {pokale,pokaleMax,med,medMax}; }
+    gemMax+=1+D.challOrder.length; if(u.cardsDone(k)) gem++;
+    D.challOrder.forEach(typ=>{ const n=[0,1,2].filter(i=>u.lvPassed(u.chId(k,typ),i)).length; med+=n; medMax+=3; if(n===3) gem++; }); });
+  return {gem,gemMax,med,medMax}; }
 
 /* ---------- Startseite: Knöpfe ---------- */
 function homeButtons(teacher){
   const out=[];
-  const b=el("button",{class:"tab trophy","aria-label":"Pokalregal",title:"Pokalregal"},TROPHY);
+  const b=el("button",{class:"tab trophy","aria-label":"Meine Erfolge",title:"Meine Erfolge"},SEAL_ICON);
   if(ident&&dirty()){ b.appendChild(el("i",{class:"ndot",title:"Neuer Stand seit der letzten Sicherung"})); }
   b.addEventListener("click",renderRegal); out.push(b);
   return out; }
@@ -39,11 +43,11 @@ function endHint(){
   if(!ident||!dirty()) return null;
   const d=el("div",{class:"sendhint"}); const b=el("button",{class:"linkbtn"},"Stand sichern und senden →"); b.addEventListener("click",sendModal); d.appendChild(b); return d; }
 
-/* ---------- Pokalregal ---------- */
+/* ---------- Meine Erfolge ---------- */
 function medal(n,on,perfect){ return `<span class="medal m${n}${on?" on":""}" title="Level ${n}${on?(perfect?" · alles richtig":" · geschafft"):""}">${n}${perfect?'<b aria-hidden="true">★</b>':""}</span>`; }
 function renderRegal(){
   const u=UI(); u.view(false);
-  u.bar("← Lernpfad",u.renderHome,"Mathe-Master","Pokalregal",u.themeSwitch());
+  u.bar("← Lernpfad",u.renderHome,"Mathe-Master","Meine Erfolge",u.themeSwitch());
   const main=el("main",{class:"regal"});
   document.getElementById("app").appendChild(main);
 
@@ -71,19 +75,19 @@ function renderRegal(){
     id.appendChild(row); }
 
   /* Regalbretter */
-  const sum=el("div",{class:"rsum"},`<b>${c.pokale}</b> von ${c.pokaleMax} Pokalen · <b>${c.med}</b> von ${c.medMax} Medaillen`); main.appendChild(sum);
+  const sum=el("div",{class:"rsum"},`<b>${c.gem}</b> von ${c.gemMax} gemeistert · <b>${c.med}</b> von ${c.medMax} Levels geschafft`); main.appendChild(sum);
   u.okIds().forEach(kid=>{ const k=u.getK(kid); if(!k) return; const D=k.def;
     const shelf=el("section",{class:"shelf"}); shelf.appendChild(el("h3",{},`<span class="nr">${k.nr}</span>${k.titel}`));
     const row=el("div",{class:"board"}); shelf.appendChild(row);
     const nC=D.steckOrder.length, dC=D.steckOrder.filter(key=>u.P.cards[u.cid(k,key)]).length, full=dC===nC;
-    const sc=el("button",{class:"trophy-card cardsc"+(full?" full":"")}); sc.innerHTML=`<span class="eyebrow">Start</span><b>Steckbriefe</b><span class="stamp">${full?"✓":dC+" / "+nC}</span><span class="tst">${full?"Pokal":"Mini-Checks"}</span>`;
+    const sc=el("button",{class:"trophy-card cardsc"+(full?" full":"")}); sc.innerHTML=`${seal(full)}<span class="eyebrow">Start</span><b>Steckbriefe</b><span class="stamp">${dC} / ${nC}</span><span class="tst">${full?"Gemeistert":"Mini-Checks"}</span>`;
     sc.addEventListener("click",()=>u.renderFocus(k)); row.appendChild(sc);
     D.challOrder.forEach((typ,i)=>{ const def=D.challenges[typ], cid=u.chId(k,typ), ps=[0,1,2].map(n=>u.lvPassed(cid,n)), full=ps.every(Boolean), open=u.chOpen(k,i);
       const b=el("button",{class:"trophy-card"+(full?" full":"")+(open?"":" locked"),"aria-disabled":String(!open)});
-      b.innerHTML=`<span class="eyebrow">Challenge ${i+1}</span><b>${def.titel}</b><span class="medals">${ps.map((p,n)=>medal(n+1,p,p&&u.P.best[cid+":"+n]>=MM.PRO_LEVEL)).join("")}</span><span class="tst">${full?"Pokal":open?ps.filter(Boolean).length+" / 3":"gesperrt"}</span>`;
+      b.innerHTML=`${seal(full)}<span class="eyebrow">Challenge ${i+1}</span><b>${def.titel}</b><span class="medals">${ps.map((p,n)=>medal(n+1,p,p&&u.P.best[cid+":"+n]>=MM.PRO_LEVEL)).join("")}</span><span class="tst">${full?"Gemeistert":open?ps.filter(Boolean).length+" / 3 Levels":"gesperrt"}</span>`;
       if(open) b.addEventListener("click",()=>u.renderIntro(k,typ)); row.appendChild(b); });
     main.appendChild(shelf); });
-  main.appendChild(el("p",{class:"muted rfoot"},"Pokal = alle 3 Levels einer Challenge. Der Stern an einer Medaille heißt: alle Aufgaben im ersten Versuch richtig."));
+  main.appendChild(el("p",{class:"muted rfoot"},"Das Siegel bekommst du, wenn du alle 3 Levels einer Challenge gemeistert hast. Der Stern an einem Level heißt: alle Aufgaben im ersten Versuch richtig."));
 }
 
 /* ---------- Stand senden ---------- */
@@ -91,7 +95,7 @@ function sendModal(){
   const u=UI(); if(!ident){ renderRegal(); return; }
   const box=el("div",{style:"display:flex;flex-direction:column;gap:12px"}); const f=Pr.makeFile(u.P,ident), name=Pr.fileName(f), cf=cfg(), c=counts();
   box.appendChild(el("h3",{},"Stand senden"));
-  box.appendChild(el("p",{class:"muted"},`Dein Stand (${f.c.length} Karten, ${c.med} Medaillen, ${c.pokale} Pokale) wird als kleine Datei <b>${name}</b> gesichert.`));
+  box.appendChild(el("p",{class:"muted"},`Dein Stand (${f.c.length} Mini-Checks, ${c.med} Levels, ${c.gem} gemeistert) wird als kleine Datei <b>${name}</b> gesichert.`));
   if(cf.hinweis) box.appendChild(el("p",{class:"nhint"},cf.hinweis));
   const msg=el("p",{class:"nmsg"});
   const file=new File([JSON.stringify(f)],name,{type:"application/json"});
@@ -99,7 +103,7 @@ function sendModal(){
   const canShare=!!(navigator.canShare&&navigator.share&&(()=>{ try{ return navigator.canShare({files:[file]}); }catch(e){ return false; } })());
   const send=el("button",{class:"btn big"},canShare?"Senden …":"Datei speichern");
   send.addEventListener("click",()=>{
-    if(canShare){ navigator.share({files:[file],title:"Mathe-Master "+ident.id}).then(()=>done("Gesendet. Danke!")).catch(e=>{ if(e&&e.name==="AbortError") note(msg,"Abgebrochen. Es wurde nichts gesendet."); else note(msg,"Das Teilen hat nicht geklappt. Nimm „Datei speichern“ oder den Stand-Code.","bad"); }); }
+    if(canShare){ navigator.share({files:[file]}).then(()=>done("Gesendet. Danke!")).catch(e=>{ if(e&&e.name==="AbortError") note(msg,"Abgebrochen. Es wurde nichts gesendet."); else note(msg,"Das Teilen hat nicht geklappt. Nimm „Datei speichern“ oder den Stand-Code.","bad"); }); }
     else { download(file); if(cf.url) window.open(cf.url,"_blank","noopener"); done("Datei gespeichert."+(cf.url?" Lege sie jetzt im Abgabe-Ordner ab.":"")); } });
   const acts=el("div",{class:"nrow"}); acts.appendChild(send);
   if(canShare){ const d=el("button",{class:"btn ghost"},"Datei speichern"); d.addEventListener("click",()=>{ download(file); done("Datei gespeichert."); }); acts.appendChild(d); }
@@ -124,7 +128,7 @@ function restoreModal(){
       if(o.id!==ident.id) throw new Error("Dieser Stand gehört zu „"+(o.id||"?")+"“, du bist als „"+ident.id+"“ angemeldet.");
       if(!Pr.checkFile(o,ident.key)) throw new Error("Die Prüfsumme passt nicht. Die Datei wurde verändert oder ist beschädigt.");
       const snap=Pr.clean(o), before=counts(); Pr.mergeInto(u.P,snap); u.save(); const after=counts();
-      note(msg,`Wiederhergestellt: Stand vom ${o.t.slice(8,10)}.${o.t.slice(5,7)}. ${o.t.slice(11,16)} Uhr. Medaillen: ${before.med} → ${after.med}.`,"ok"); MM.Fx.snd.level(false);
+      note(msg,`Wiederhergestellt: Stand vom ${o.t.slice(8,10)}.${o.t.slice(5,7)}. ${o.t.slice(11,16)} Uhr. Levels: ${before.med} → ${after.med}.`,"ok"); MM.Fx.snd.level(false);
     }catch(e){ note(msg,e&&e.message&&!/JSON|Unexpected|atob|string/i.test(e.message)?e.message:"Das habe ich nicht verstanden. Bitte die Datei oder den Code genau so verwenden, wie er gesendet wurde.","bad"); } };
   fi.addEventListener("change",()=>{ const f=fi.files&&fi.files[0]; if(!f) return; f.text().then(apply); });
   go.addEventListener("click",()=>{ if(!ta.value.trim()){ note(msg,"Füge zuerst den Stand-Code ein oder wähle eine Datei.","bad"); return; } apply(ta.value); });
