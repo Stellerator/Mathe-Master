@@ -39,16 +39,16 @@ function note(freq,t0,{dur=0.5,vol=0.5,glide=0}={}){
   o.connect(g); g.connect(bus); o.start(t); o.stop(t+dur+0.05);
 }
 // Tonvorrat in Hz
-const N={F3:174.6,A3:220,C4:261.6,E4:329.6,G4:392,A4:440,C5:523.3,E5:659.3,G5:784};
+const N={F3:174.6,A3:220,C4:261.6,E4:329.6,F4:349.2,G4:392,A4:440,C5:523.3,E5:659.3,G5:784,F5:698.5,E6:1318.5};
 function play(fn){ if(!on) return; try{ const r=setup(); if(r&&r.then) r.then(()=>{ try{fn();}catch(e){} }); else fn(); }catch(e){} }
 // Die Klänge: note(Ton, Start, {dur, vol})
 const Snd={
   ok(){ play(()=>{ note(N.E4,0,{vol:.6,dur:.5}); note(N.A4,0.08,{vol:.5,dur:.6}); }); },                                   // richtige Antwort
   card(){ play(()=>{ note(N.C4,0,{vol:.55}); note(N.E4,0.08,{vol:.5}); note(N.G4,0.16,{vol:.45,dur:.65}); }); },          // Mini-Check gelöst
-  bad(){ play(()=>{ note(N.A3,0,{vol:.45,dur:.35,glide:.9}); }); },                                                       // falsch
+  bad(){ play(()=>{ note(N.F4,0,{vol:.5,dur:.35,glide:.9}); note(N.F5,0,{vol:.18,dur:.3,glide:.9}); }); },                                                       // falsch
   level(perfect){ play(()=>{ [N.C4,N.E4,N.G4,N.C5].forEach((f,i)=>note(f,i*0.1,{vol:.55,dur:.7}));                           // Level geschafft
     if(perfect){ note(N.E5,0.45,{vol:.35,dur:.8}); note(N.G5,0.55,{vol:.3,dur:.9}); } }); },
-  miss(){ play(()=>{ note(N.A3,0,{vol:.45,dur:.45}); note(N.F3,0.12,{vol:.45,dur:.55}); }); },                             // Level verfehlt
+  miss(){ play(()=>{ note(N.G4,0,{vol:.5,dur:.45}); note(N.E4,0.12,{vol:.5,dur:.55}); note(N.G5,0,{vol:.15,dur:.4}); note(N.E5,0.12,{vol:.15,dur:.5}); }); },                             // Level verfehlt
   pop(){ play(()=>{ note(N.A3,0,{vol:.4,dur:.25}); }); }                                                                   // Ton-Schalter
 };
 

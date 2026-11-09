@@ -418,7 +418,7 @@ footer{margin-top:28px;display:flex;justify-content:space-between;align-items:ce
 :root{ --gold:#e0a21a; --gold-soft:#fbf1d6; --silver:#a9b6c1; --bronze:#c6874f; }
 :root[data-theme="dark"]{ --gold-soft:#3a2d0c; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --gold-soft:#3a2d0c; } }
-.tab.trophy{position:relative}
+.tab.trophy{position:relative;width:48px;padding:0;justify-content:center}
 .ndot{position:absolute;top:6px;right:8px;width:10px;height:10px;border-radius:50%;background:var(--mark);border:2px solid var(--surface)}
 .tab.teachtab{border-color:var(--mark);color:var(--mark);background:var(--mark-soft)}
 .regal,.lehrer{display:flex;flex-direction:column;gap:18px;padding-bottom:24px}

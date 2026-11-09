@@ -31,7 +31,7 @@ function counts(){ // zählt Pokale (komplette Challenges) und Medaillen (bestan
 /* ---------- Startseite: Knöpfe ---------- */
 function homeButtons(teacher){
   const out=[];
-  const b=el("button",{class:"tab trophy","aria-label":"Pokalregal"},`${TROPHY}<span>Pokalregal</span>`);
+  const b=el("button",{class:"tab trophy","aria-label":"Pokalregal",title:"Pokalregal"},TROPHY);
   if(ident&&dirty()){ b.appendChild(el("i",{class:"ndot",title:"Neuer Stand seit der letzten Sicherung"})); }
   b.addEventListener("click",renderRegal); out.push(b);
   return out; }
