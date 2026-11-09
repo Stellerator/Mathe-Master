@@ -12,9 +12,11 @@
 window.MM = window.MM || {};
 MM.MATHEGYM = {
   k1: [
-    // { titel:"Funktionswerte berechnen", wo:"Mathegym › Funktionen › Grundlagen", url:"https://…", hinweis:"Aufgaben 1 bis 5" },
+    { titel:"I_Lineare Funktionen. Graphisch", url:"https://mathegym.de/arbeitsauftrag-id/166226", hinweis:"3 Level" }
+     // { titel:"Funktionswerte berechnen", wo:"Mathegym › Funktionen › Grundlagen", url:"https://…", hinweis:"Aufgaben 1 bis 5" },
   ],
   k2: [
     // { titel:"Intervalle und Mengen", url:"https://…" },
   ]
 };
+ 
