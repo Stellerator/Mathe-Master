@@ -199,7 +199,8 @@ function uebL3(){ return shuffle([pictureTask("intervall"),pictureTask("menge"),
 MM.K2T={tokens,words,randRay,randBounded,randSet,rules,smallest:()=>null}; // nur für Tests
 MM.addKapitel("k2",{
   steckOrder:["zahlen","mengen","intervall","aussage"], steckbriefe,
-  challOrder:["ziel","bau","ueb"],
+  challOrder:["ziel","ueb","bau"],
+  braucht:{ziel:["zahlen","mengen","intervall"],ueb:["zahlen","mengen","intervall"],bau:["zahlen","mengen","intervall","aussage"]}, // welche Steckbriefe (Mini-Check) eine Challenge freischalten
   challenges:{
     ziel:{titel:"Zielscheibe", art:"Zahlen auf der Zahlengerade", buch:"S. 22 bis 24",
       kurz:"Markiere alle Zahlen, die zu einer Menge gehören.",

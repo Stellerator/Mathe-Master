@@ -348,7 +348,8 @@ function dwL3(){ return shuffle([pairTask(Terms.FAM_W2),pairTask(Terms.FAM_W2.co
 /* ======================= Kapitel-Definition ======================= */
 MM.addKapitel("k1",{
   steckOrder:["funktion","term","stelle","dw"], steckbriefe,
-  challOrder:["wert","funktion","dw"],
+  challOrder:["funktion","wert","dw"],
+  braucht:{funktion:["funktion"],wert:["funktion","term","stelle"],dw:["funktion","term","stelle","dw"]}, // welche Steckbriefe (Mini-Check) eine Challenge freischalten
   challenges:{
     wert:{titel:"Wert & Stelle", art:"Einsetzen, Ablesen, Symbole", buch:"S. 13 A6 b), A3 bis A5 · S. 14 A8, A11",
       kurz:"Funktionswerte berechnen, Stellen finden, am Graphen ablesen und in Symbolen sprechen.",

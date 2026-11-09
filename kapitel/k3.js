@@ -706,6 +706,7 @@ MM.K3T.retry=retry;
 
 MM.addKapitel("k3",{
   steckOrder:["gerade","steigung","term","punkte","winkel"], steckbriefe,
-  challOrder:["gerade","term","punkte","winkel","sach"],
+  challOrder:["gerade","term","punkte","sach","winkel"],
+  braucht:{gerade:["gerade","steigung"],term:["gerade","steigung","term"],punkte:["gerade","steigung","term","punkte"],sach:["gerade","steigung","term","punkte"],winkel:["gerade","steigung","term","punkte","winkel"]}, // welche Steckbriefe (Mini-Check) eine Challenge freischalten
   challenges:{gerade:CH_GERADE,term:CH_TERM,punkte:CH_PUNKTE,winkel:CH_WINKEL,sach:CH_SACH}});
 })();

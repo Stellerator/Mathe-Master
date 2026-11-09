@@ -48,7 +48,7 @@ const chId=(k,typ)=>k.id+"-"+typ;
 const cid=(k,key)=>k.id+"."+key;
 const lvPassed=(id,n)=>!!(P.lv[id]&&P.lv[id][n]);
 const cardsDone=k=>k.def.steckOrder.every(key=>P.cards[cid(k,key)]);
-const chOpen=(k,i)=>teacher||(i===0?cardsDone(k):lvPassed(chId(k,k.def.challOrder[i-1]),0));
+const chOpen=(k,i)=>{ if(teacher) return true; const D=k.def, typ=D.challOrder[i], need=(D.braucht&&D.braucht[typ])||D.steckOrder; return need.every(key=>P.cards[cid(k,key)]); };
 const lvOpen=(id,n)=>teacher||n===0||lvPassed(id,n-1);
 function getK(id){ const m=meta(id); return m&&isOk(id)?{id,nr:m.nr,titel:m.titel,untertitel:m.untertitel,buch:m.buch,def:MM.kapitel[id]}:null; }
 const okIds=()=>MM.LISTE.filter(e=>isOk(e.id)).map(e=>e.id);
@@ -107,7 +107,7 @@ function stations(k){
   const list=[{kind:"cards",titel:"Steckbriefe",eyebrow:"Start",kurz:`${nC} Karten zum Durchblättern, jede mit Mini-Check.`,open:true,done:dC===nC,prog:`${dC} / ${nC} Karten`,go:()=>renderFocus(k)}];
   D.challOrder.forEach((typ,i)=>{ const id=chId(k,typ), def=D.challenges[typ], passed=[0,1,2].map(n=>lvPassed(id,n));
     list.push({kind:"ch",typ,titel:def.titel,eyebrow:`Challenge ${i+1}`,kurz:def.kurz,open:chOpen(k,i),done:passed.every(Boolean),passed,
-      lock:i===0?"Erst alle Steckbriefe mit Mini-Check schaffen.":`Erst Level 1 von „${D.challenges[D.challOrder[i-1]].titel}“ schaffen.`,go:()=>renderIntro(k,typ)}); });
+      lock:"Erst weitere Steckbriefe mit Mini-Check schaffen.",go:()=>renderIntro(k,typ)}); });
   return list; }
 
 function renderHome(){
@@ -155,7 +155,7 @@ function renderHome(){
   else cta.appendChild(el("p",{class:"prompt"},"Kapitel geschafft. Alle Levels lassen sich wiederholen."));
   cta.appendChild(note); home.appendChild(cta);
   home.appendChild(el("div",{class:"rules"},
-    `<div class="rule"><b>1 · Steckbriefe</b>Karte lesen, Mini-Check lösen, weiterblättern. Danach geht die erste Challenge auf.</div>
+    `<div class="rule"><b>1 · Steckbriefe</b>Karte lesen, Mini-Check lösen, weiterblättern. Mit jedem Steckbrief gehen passende Challenges auf.</div>
      <div class="rule"><b>2 · Level-Hürde</b>Jedes Level hat ${PRO_LEVEL} Aufgaben. Mit ${HUERDE} Treffern im ersten Versuch steigst du auf.</div>
      <div class="rule"><b>3 · Aus Fehlern lernen</b>Nach jeder Aufgabe siehst du, warum die Antwort stimmt oder wo der Fehler lag.</div>`));
   const next2=MM.LISTE.find(e=>!isOk(e.id)&&e.nr>k.nr);
@@ -248,7 +248,7 @@ function renderIntro(k,typ){
   buchTools(hd,def.buch||k.buch);
   const wrap=el("div",{class:"intro"});
   wrap.appendChild(el("div",{class:"about"},`<span class="eyebrow">${def.art}</span><h3>So geht's</h3><p>${T(def.intro)}</p>
-    <div class="rule"><b>Level-Hürde</b>${PRO_LEVEL} Aufgaben pro Level. Mit ${HUERDE} Treffern im ersten Versuch steigst du auf. ${idx<D.challOrder.length-1?"Level 1 schaltet die nächste Challenge frei.":""}</div>`));
+    <div class="rule"><b>Level-Hürde</b>${PRO_LEVEL} Aufgaben pro Level. Mit ${HUERDE} Treffern im ersten Versuch steigst du auf.</div>`));
   const lvls=el("div",{class:"levels"}); const nextLv=[0,1,2].find(n=>lvOpen(id,n)&&!lvPassed(id,n));
   def.levels.forEach((lv,n)=>{ const open=lvOpen(id,n), passed=lvPassed(id,n), best=P.best[id+":"+n];
     const b=el("button",{class:"level"+(passed?" passed":"")+(!open?" locked":"")+(n===nextLv?" next":"")});
@@ -292,19 +292,17 @@ function playLevel(k,typ,n){
   function ende(){
     cleanup(); split.remove();
     const hits=res.filter(Boolean).length, pass=hits>=HUERDE, war=lvPassed(id,n);
-    const idx=D.challOrder.indexOf(typ), nextTyp=D.challOrder[idx+1];
+    const idx=D.challOrder.indexOf(typ), nextTyp=chOpen(k,idx+1)?D.challOrder[idx+1]:null;
     if(pass){ P.lv[id]=P.lv[id]||[false,false,false]; P.lv[id][n]=true; }
     P.best[id+":"+n]=Math.max(P.best[id+":"+n]||0,hits); save(); drawTrack(); const sp=track.querySelector("span"); if(sp){ sp.textContent=pass?"Level geschafft":"Hürde verpasst"; sp.className=pass?"":"warn"; }
     const card=el("div",{class:"endcard"});
     card.innerHTML=`<span class="eyebrow">Level ${n+1} · ${lv.name}</span><span class="big" data-of="${N}">${hits} / ${N}</span><span class="muted">Treffer im ersten Versuch</span>`;
     card.appendChild(el("h3",{},pass?(hits===N?"Perfekt. Level geschafft!":"Level geschafft!"):(hits===HUERDE-1?"Knapp daneben.":"Noch nicht geschafft.")));
     card.appendChild(el("p",{class:"msg"},pass?(hits===N?"Alles im ersten Versuch. Das sitzt.":"Schau dir die Fehler im Steckbrief noch einmal an."):`Für den Aufstieg brauchst du ${HUERDE} von ${N}. Die nächste Runde hat neue Aufgaben.`));
-    if(pass&&!war){ if(n<2) card.appendChild(el("span",{class:"unlock"},`Level ${n+2} ist frei.`));
-      if(n===0&&nextTyp) card.appendChild(el("span",{class:"unlock"},`Neue Challenge frei: ${D.challenges[nextTyp].titel}`)); }
+    if(pass&&!war){ if(n<2) card.appendChild(el("span",{class:"unlock"},`Level ${n+2} ist frei.`)); }
     const acts=el("div",{class:"actions",style:"justify-content:center;margin-top:8px"});
     const btn=(t,fn,ghost)=>{ const b=el("button",{class:"btn"+(ghost?" ghost":"")},t); b.addEventListener("click",fn); acts.appendChild(b); return b; };
-    if(pass){ if(n<2) btn(`Level ${n+2} starten →`,()=>playLevel(k,typ,n+1)); else if(nextTyp) btn(`Weiter: ${D.challenges[nextTyp].titel} →`,()=>renderIntro(k,nextTyp));
-      if(n===0&&nextTyp) btn(`${D.challenges[nextTyp].titel} →`,()=>renderIntro(k,nextTyp),true); }
+    if(pass){ if(n<2) btn(`Level ${n+2} starten →`,()=>playLevel(k,typ,n+1)); else if(nextTyp) btn(`Weiter: ${D.challenges[nextTyp].titel} →`,()=>renderIntro(k,nextTyp)); }
     else { btn("Neue Runde",()=>playLevel(k,typ,n)); btn("Steckbriefe ansehen",()=>renderFocus(k,0),true); }
     if((MM.MATHEGYM[k.id]||[]).length) btn("Üben im Mathegym",()=>mathegymModal(k.id),true);
     btn("Zum Lernpfad",renderHome,true);

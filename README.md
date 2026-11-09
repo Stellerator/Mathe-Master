@@ -6,6 +6,9 @@ Statische Lern-App. Kein Build, kein Server nötig. Läuft auf GitHub Pages (HTT
 Kapitel erscheinen, sobald ihre Datei im Ordner `kapitel/` liegt (`k3.js` usw.). Ohne Datei steht im Reiter „folgt“.
 Die Liste der Kapitel steht in `kapitel/liste.js`. Optional kann ein Kapitel mit `ab:"2026-12-01"` erst ab einem Datum erscheinen.
 
+## Wann geht eine Challenge auf?
+Die Challenges öffnen in der Reihenfolge der Steckbriefe. Jede Challenge öffnet, sobald ihre Steckbriefe mit Mini-Check gelöst sind. Die Zuordnung steht je Kapitel in `braucht` (am Ende der Kapiteldatei, neben `challOrder`). Ohne Eintrag braucht eine Challenge alle Steckbriefe des Kapitels. Die Challenges in `challOrder` sollten so sortiert sein, dass sie in der Reihenfolge der Steckbriefe aufgehen. Die Steckbriefe selbst bleiben der Reihe nach. Die Lehrkraft-Ansicht öffnet alles.
+
 ## Üben im Mathegym
 In `kapitel/mathegym.js` je Kapitel Einträge `{titel, wo, hinweis, url}` eintragen. Ist die Liste leer, wird der Button ausgeblendet.
 
