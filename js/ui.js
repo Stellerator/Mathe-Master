@@ -124,6 +124,7 @@ function renderHome(){
       `<span class="nr">${e.nr}</span>${e.titel}${ok?"":(status[e.id]==="ab"&&e.ab?` <span class="tag-s">ab ${fmtDate(e.ab)}</span>`:' <span class="tag-s">folgt</span>')}`);
     if(!ok){ b.setAttribute("aria-disabled","true"); b.title="Wird später freigeschaltet"; } else b.addEventListener("click",()=>{ aktK=e.id; try{ localStorage.setItem(KAP_KEY,aktK); }catch(_){} renderHome(); });
     tabs.appendChild(b); });
+  if(MM.Nachweis) MM.Nachweis.homeButtons(teacher).forEach(b=>tabs.appendChild(b));
   tabs.appendChild(themeSwitch());
   top.append(brand,tabs); app.appendChild(top);
 
@@ -295,7 +296,7 @@ function playLevel(k,typ,n){
     else { btn("Neue Runde",()=>playLevel(k,typ,n)); btn("Steckbriefe ansehen",()=>renderFocus(k,0),true); }
     if((MM.MATHEGYM[k.id]||[]).length) btn("Üben im Mathegym",()=>mathegymModal(k.id),true);
     btn("Zum Lernpfad",renderHome,true);
-    card.appendChild(acts); app.appendChild(card);
+    card.appendChild(acts); if(MM.Nachweis&&pass){ const h=MM.Nachweis.endHint(); if(h) card.appendChild(h); } app.appendChild(card);
     card.classList.add(pass?"win":"lose"); MM.Fx.countUp(card.querySelector(".big"),hits);
     if(pass){ MM.Fx.snd.level(hits===N); MM.Fx.confetti(card,hits===N?44:24); } else MM.Fx.snd.miss();
   }
@@ -303,6 +304,9 @@ function playLevel(k,typ,n){
 }
 
 /* ---------- Start ---------- */
-MM.start=function(){ app.innerHTML='<p class="muted" style="padding:40px;text-align:center">Lade …</p>'; loadChapters(()=>{ renderHome(); }); };
+MM.start=function(){ try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+  app.innerHTML='<p class="muted" style="padding:40px;text-align:center">Lade …</p>'; loadChapters(()=>{ renderHome(); }); };
+MM.UI={el,view,bar,themeSwitch,openModal,renderHome,renderIntro,renderFocus,save,isOk,okIds,getK,chId,cid,chOpen,lvPassed,cardsDone,
+  get P(){return P;}, get teacher(){return teacher;}, get status(){return status;}, ready:loadChapters, setTeacher};
 MM._state={get P(){return P;},get teacher(){return teacher;},status,setTeacher,renderHome,renderFocus,renderIntro,playLevel,pinDialog};
 })();

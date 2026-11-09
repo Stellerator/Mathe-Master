@@ -247,7 +247,7 @@ const WF=[
   {s:"Eine Parallele zur y-Achse kann nicht Graph einer Funktion sein.",opts:[
     {t:"Wahr: Zu einem x gehören dann unendlich viele y-Werte.",ok:true},
     {t:"Falsch: Sie ist eine konstante Funktion.",fb:"Konstant ist die waagerechte Gerade, nicht die senkrechte."},
-    {t:"Falsch: Jede Gerade ist ein Funktionsgraph.",fb:"Die senkrechte Gerade ist die Ausnahme."}],e:"Eine senkrechte Gerade trifft sich selbst in vielen Punkten mit der Senkrechten durch dasselbe x. Das ist nicht eindeutig."},
+    {t:"Falsch: Jede Gerade ist ein Funktionsgraph.",fb:"Die senkrechte Gerade ist die Ausnahme."}],e:"Die senkrechte Gerade x = 2 enthält unendlich viele Punkte mit demselben x-Wert 2 und verschiedenen y-Werten. Das ist nicht eindeutig."},
   {s:"Jede Parallele zur x-Achse hat mit dem Graphen einer beliebigen Funktion höchstens einen Punkt gemeinsam.",opts:[
     {t:"Falsch: Verschiedene x können denselben y-Wert haben, zum Beispiel bei einer Parabel.",ok:true},
     {t:"Wahr: Jedem x gehört genau ein y.",fb:"Das gilt für Senkrechte, nicht für Waagerechte."},

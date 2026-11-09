@@ -3,7 +3,7 @@
 "use strict";
 const MM = window.MM = window.MM || {};
 let MM_tn;
-MM.VERSION = "1.0"; MM.STAND = "08.11.2026";
+MM.VERSION = "1.1"; MM.STAND = "08.11.2026";
 MM.kapitel = MM.kapitel || {}; MM.LISTE = MM.LISTE || []; MM.MATHEGYM = MM.MATHEGYM || {};
 MM.PRO_LEVEL = 5; MM.HUERDE = 4;   // 5 Aufgaben je Level, bestanden mit 4 Treffern im ersten Versuch
 
@@ -37,6 +37,7 @@ function ts(v){ return tn(v).replace("{,}",",").replace("-","−"); }
 function sg(a){ return a<0 ? `- ${tn(-a)}` : `+ ${tn(a)}`; }
 const MACROS = {"\\R":"\\mathbb{R}","\\N":"\\mathbb{N}","\\Z":"\\mathbb{Z}","\\Q":"\\mathbb{Q}","\\Rp":"\\mathbb{R}^{+}","\\Df":"D_f","\\Wf":"W_f"};
 function tex(s, display){
+  s=String(s).replace(/(^|[^\\])\|(\s*)-/g,"$1|$2{-}"); // Minus nach | (z. B. Punkt (3|-2)) ohne Rechenzeichen-Abstand
   try{ if(window.katex) return window.katex.renderToString(s,{throwOnError:false,strict:false,displayMode:!!display,macros:Object.assign({},MACROS)}); }catch(e){}
   return `<span class="tex-fallback">${esc(s)}</span>`; }
 // Text mit $...$ → Formeln

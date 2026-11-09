@@ -165,8 +165,9 @@ function bauL3(i){
 
 /* ======================= Challenge 3: Übersetzer ======================= */
 function smallest(){ const items=[{t:"7",l:3},{t:"12",l:3},{t:"−4",l:2},{t:"−10",l:2},{t:"0,75",l:1},{t:"−2,5",l:1},{t:S`\tfrac13`,l:1},{t:"√2",l:0},{t:"π",l:0},{t:"√9",l:3,x:"√9 = 3, das ist eine Zählzahl."},{t:"√5",l:0}];
-  const it=one(items); const names=[S`$\R$`,S`$\Q$`,S`$\Z$`,S`$\N$`]; const names2=names.map((n,k)=>({t:n,ok:k===3-it.l}));
-  names2.forEach((o,k)=>{ const lvl=3-k; if(!o.ok) o.fb=lvl>it.l?"Die Zahl passt in einen kleineren Bereich.":"In diesen Bereich passt die Zahl nicht."; });
+  const it=one(items); const names=[S`$\R$`,S`$\Q$`,S`$\Z$`,S`$\N$`]; // Index = Nummer des kleinsten Bereichs (0 = ℝ ... 3 = ℕ)
+  const names2=names.map((n,k)=>({t:n,ok:k===it.l}));
+  names2.forEach((o,k)=>{ if(!o.ok) o.fb=k<it.l?"Das stimmt zwar, aber es gibt einen kleineren Bereich, in den die Zahl passt.":"In diesen Bereich passt die Zahl nicht."; });
   return MM.mcTask({sit:`<span class="bigtex">${/^\\/.test(it.t)?"$"+it.t+"$":it.t}</span>`,label:"Zahl",q:"Zu welchem kleinsten Zahlbereich gehört die Zahl?",opts:names2,keepOrder:true,
     erkl:(it.x||"")+" "+["Sie ist nur in $\\R$ zu finden.","Sie ist ein Bruch, aber keine ganze Zahl: kleinster Bereich $\\Q$.","Sie ist ganz, aber nicht natürlich: kleinster Bereich $\\Z$.","Sie ist eine Zählzahl: kleinster Bereich $\\N$."][it.l]}); }
 function elemTask(){ const items=[["-3","\\N",false,"Negative Zahlen gehören nicht zu $\\N$."],["5","\\Z",true,"5 ist eine ganze Zahl."],["0{,}5","\\Z",false,"0,5 ist keine ganze Zahl, sondern ein Bruch."],["0{,}5","\\Q",true,"0,5 = ½ ist ein Bruch."],["\\sqrt2","\\Q",false,"$\\sqrt2$ lässt sich nicht als Bruch schreiben."],["\\pi","\\R",true,"Jede Zahl der Zahlengerade liegt in $\\R$."],["-4","\\Z",true,"−4 ist eine ganze Zahl."],["\\tfrac13","\\Q",true,"⅓ ist ein Bruch."],["-1{,}2","\\N",false,"Negative Zahlen gehören nicht zu $\\N$."],["\\sqrt2","\\R",true,"$\\sqrt2$ liegt auf der Zahlengerade."]];
@@ -195,6 +196,7 @@ function translateTask(from){ // from: "menge" -> Intervall wählen; "intervall"
     erkl:(from==="menge"?"Gleiche Menge in Intervallschreibweise: ":"Gleiche Menge in Mengenschreibweise: ")+"$M="+Sets.tex(Sx,to,"x")+"$."}); }
 function uebL3(){ return shuffle([pictureTask("intervall"),pictureTask("menge"),translateTask("menge"),translateTask("intervall"),pictureTask(one(["menge","intervall"]))]); }
 
+MM.K2T={tokens,words,randRay,randBounded,randSet,rules,smallest:()=>null}; // nur für Tests
 MM.addKapitel("k2",{
   steckOrder:["zahlen","mengen","intervall","aussage"], steckbriefe,
   challOrder:["ziel","bau","ueb"],
