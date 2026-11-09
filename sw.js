@@ -10,7 +10,7 @@ self.addEventListener("install", e => {
     fetch(new Request(p, {cache: "reload"})).then(r => { if (r.ok) return c.put(key(p), r); }).catch(() => {})))).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("mathe-master-") && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener("fetch", e => {
   const r = e.request; if (r.method !== "GET") return;

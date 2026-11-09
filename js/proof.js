@@ -62,7 +62,13 @@ const makeCode=(mk,id)=>{ const k=keyFor(mk,id); return id+"-"+k.slice(0,5)+"-"+
 function parseCode(raw){
   const s=String(raw||"").toUpperCase().replace(/[\u2010-\u2015\u2212]/g,"-").replace(/[\s_.]+/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
   const m=/^([A-Z0-9]{2,8})-([A-Z2-9]{5})-([A-Z2-9]{5})-([A-Z2-9]{2})$/.exec(s);
-  if(!m) return {err:"Das sieht nicht wie ein Aktivierungscode aus. Er hat die Form A17-K9F2Q-3QX7M-7X."};
+  if(!m){ const g=s.split("-"), form="Er hat die Form A17-K9F2Q-3QX7M-7X.";
+    if(/[^A-Z0-9-]/.test(s)) return {err:"Im Code steht ein Zeichen, das es dort nicht gibt. "+form};
+    if(/[01IO]/.test(g.slice(1).join(""))) return {err:"Im Code kommen die Zeichen 0, 1, I und O nicht vor. Bitte genau mit dem Kärtchen vergleichen."};
+    if(g.length===4){ const want=[null,5,5,2], nm=["","zweite","dritte","vierte"];
+      for(let i=1;i<=3;i++) if(g[i].length!==want[i]) return {err:"Die "+nm[i]+" Gruppe hat "+g[i].length+" statt "+want[i]+" Zeichen, es fehlt oder ist zu viel. Bitte noch einmal genau abschreiben."}; }
+    if(g.length<4) return {err:"Der Code ist unvollständig. Er besteht aus vier Teilen mit Bindestrichen. "+form};
+    return {err:"Das sieht nicht wie ein Aktivierungscode aus. "+form}; }
   const id=m[1], key=m[2]+m[3];
   if(chk(id,key)!==m[4]) return {err:"Tippfehler im Code. Bitte noch einmal genau abschreiben."};
   return {id,key,code:id+"-"+m[2]+"-"+m[3]+"-"+m[4]}; }
