@@ -11,8 +11,8 @@ const BOOK = `<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"
 
 /* ---------- Speicher ---------- */
 const KEY="mathe-master-v1", THEME_KEY="mathe-master-theme", KAP_KEY="mathe-master-kapitel";
-let P={cards:{},lv:{},best:{}};
-try{ const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s&&typeof s==="object") P={cards:s.cards||{},lv:s.lv||{},best:s.best||{}}; }catch(e){}
+let P={cards:{},lv:{},best:{},x:{}};
+try{ const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s&&typeof s==="object") P={cards:s.cards||{},lv:s.lv||{},best:s.best||{},x:(s.x&&typeof s.x==="object")?s.x:{}}; }catch(e){}
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(P)); }catch(e){} }
 let teacher=false;
 let theme="auto"; try{ theme=localStorage.getItem(THEME_KEY)||"auto"; }catch(e){}
@@ -27,9 +27,21 @@ function themeSwitch(){ const box=el("div",{class:"theme",role:"group","aria-lab
   box.appendChild(MM.Fx.button());
   return box; }
 
+/* ---------- V2: Fehlerlog (je Challenge und Level) und gekürztes Feedback ---------- */
+/* P.x.stat["k3-term:1"] = {a: Aufgaben, f: Fehler, t: Zeitpunkt zuletzt}. Wird nur ergänzt, verändert keinen Lernstand. */
+function logRes(key,ok){ const x=P.x=P.x||{}; const st=x.stat=x.stat||{}; const r=st[key]=st[key]||{a:0,f:0,t:0}; r.a++; if(ok!==true) r.f+=(typeof ok==="number"?ok:1); r.t=Date.now();
+  const d=MM.todayIso(); const dd=x.days=x.days||{}; dd[d]=(dd[d]||0)+1; save(); }
+function feedbackInto(fb,ok,html,title){ if(ok) MM.Fx.snd.ok(); else MM.Fx.snd.bad();
+  const head=title||(ok?one(LOBW):"Nicht ganz.");
+  if(ok&&html&&String(html).replace(/<[^>]*>/g,"").trim()){
+    fb.innerHTML=`<div class="feedback ok"><b>${head}</b><div class="more"><button class="linkbtn" type="button" aria-expanded="false">Erklärung zeigen</button><div hidden>${html}</div></div></div>`;
+    const bt=fb.querySelector("button"), dv=fb.querySelector(".more>div"); bt.addEventListener("click",()=>{ dv.hidden=!dv.hidden; bt.textContent=dv.hidden?"Erklärung zeigen":"Erklärung ausblenden"; bt.setAttribute("aria-expanded",String(!dv.hidden)); });
+  } else fb.innerHTML=`<div class="feedback ${ok?"ok":"bad"}"><b>${head}</b>${html}</div>`; }
+
 /* ---------- Kapitel laden ---------- */
 MM.addKapitel = (id,def)=>{ MM.kapitel[id]=def; };
 const status={}; // id -> "ok" | "fehlt" | "ab"
+MM.todayIso=()=>{ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const heute=()=>{ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 function loadChapters(done){
   let pending=0; const fin=()=>{ if(--pending<=0) done(); }; pending=1;
@@ -59,7 +71,7 @@ function curK(){ if(!aktK||!isOk(aktK)) aktK=okIds()[0]; return getK(aktK); }
 /* ---------- Buch-Button und Mathegym ---------- */
 function buchTools(bar,text){ // fügt Buch-Button zur Leiste und Infozeile darunter hinzu
   if(!text) return null; const tools=bar.querySelector(".tools")||(()=>{ const t=el("div",{class:"tools"}); bar.appendChild(t); return t; })();
-  const b=el("button",{class:"toolbtn","aria-pressed":"false"},`${BOOK}Buch`); const info=el("div",{class:"buchinfo",hidden:""},`<b>LS</b> ${Array.isArray(text)?text.join("<br>"):text}`);
+  const b=el("button",{class:"toolbtn","aria-pressed":"false"},`${BOOK}Buch`); const info=el("div",{class:"buchinfo",hidden:""},`${Array.isArray(text)?text.join("<br>"):text}`);
   b.addEventListener("click",()=>{ const on=info.hidden; info.hidden=!on; b.setAttribute("aria-pressed",String(on)); });
   tools.prepend(b); bar.after(info); return {b,info}; }
 function openModal(inner){ const bg=el("div",{class:"modal-bg"}); const m=el("div",{class:"modal",role:"dialog","aria-modal":"true"}); m.appendChild(inner); bg.appendChild(m);
@@ -73,7 +85,7 @@ function mathegymModal(kid){
       if(it.url){ const a=el("a",{class:"btn",href:it.url,target:"_blank",rel:"noopener"},"Im Mathegym öffnen ↗"); d.appendChild(a); } box.appendChild(d); }); }
   const row=el("div",{class:"mrow"}); const c=el("button",{class:"btn ghost"},"Schließen"); row.appendChild(c); box.appendChild(row);
   const close=openModal(box); c.addEventListener("click",close); }
-function mgButton(kid){ const n=(MM.MATHEGYM[kid]||[]).length; if(!n&&!teacher) return null;
+function mgButton(kid){ const n=(MM.MATHEGYM[kid]||[]).length; if(!n) return null;
   const b=el("button",{class:"toolbtn mg"+(n?"":" empty"),"aria-label":"Üben im Mathegym"},`${DUMBBELL}Mathegym`+(n?"":" (leer)")); b.addEventListener("click",()=>mathegymModal(kid)); return b; }
 
 /* ---------- Lehrkraft-Modus: 4 s auf das Logo + PIN ---------- */
@@ -98,6 +110,10 @@ function attachLogoHold(logo){ let t=null;
 
 /* ---------- Ansichten ---------- */
 function view(fill){ cleanup(); app.className=fill?"fill":""; app.innerHTML=""; window.scrollTo(0,0); }
+/* Ohne Grafik links: Aufgabe mittig auf einer Spalte, ein Situationstext wandert über die Frage. Mit Grafik, Tabelle oder Maschine bleibt die Zweiteilung. */
+function fitLayout(split,viz,panel){
+  if(viz.querySelector("canvas,svg,table,.machine,.cv,.legend,.mlog")){ split.classList.remove("solo"); return; }
+  split.classList.add("solo"); const ref=panel.querySelector(".prompt"); [...viz.children].forEach(k=>{ if(ref) panel.insertBefore(k,ref); else panel.appendChild(k); }); }
 function bar(backLabel,onBack,eyebrow,title,right){ const b=el("div",{class:"bar"});
   const back=el("button",{class:"back"},backLabel); back.addEventListener("click",onBack);
   const ttl=el("div",{class:"ttl"},`<span class="eyebrow">${eyebrow}</span><h2>${title}</h2>`);
@@ -126,6 +142,9 @@ function renderHome(){
     if(!ok){ b.setAttribute("aria-disabled","true"); b.title="Wird später freigeschaltet"; } else b.addEventListener("click",()=>{ aktK=e.id; try{ localStorage.setItem(KAP_KEY,aktK); }catch(_){} renderHome(); });
     chaps.appendChild(b); });
   tabs.appendChild(chaps); requestAnimationFrame(()=>{ const sel=chaps.querySelector('[aria-pressed="true"]'); if(sel) chaps.scrollLeft=Math.max(0,sel.offsetLeft-12); });
+  if(MM.Wiederholung) MM.Wiederholung.homeButtons(teacher).forEach(b=>tabs.appendChild(b));
+  if(MM.Arbeit) MM.Arbeit.homeButtons(teacher).forEach(b=>tabs.appendChild(b));
+  if(MM.Nachschlagen) MM.Nachschlagen.homeButtons(teacher).forEach(b=>tabs.appendChild(b));
   if(MM.Nachweis) MM.Nachweis.homeButtons(teacher).forEach(b=>tabs.appendChild(b));
   tabs.appendChild(themeSwitch());
   top.append(brand,tabs); app.appendChild(top);
@@ -142,9 +161,12 @@ function renderHome(){
     const b=el("button",{class:"station"+(s.done?" done":"")+(!s.open?" locked":"")+(s===next?" next":"")});
     const stat=s.kind==="cards"?s.prog:`<span class="dots">${s.passed.map(p=>`<i class="${p?"on":""}"></i>`).join("")}</span>${s.passed.filter(Boolean).length} / 3 Level`;
     b.innerHTML=`${s===next?'<span class="badge-next">Als Nächstes</span>':""}<span class="num">${s.done?"✓":(s.open?i+1:LOCK)}</span><span class="eyebrow">${s.eyebrow}</span><h3>${s.titel}</h3><p>${s.kurz}</p><span class="stat">${stat}</span>`;
+    if(s.kind==="ch"&&MM.Hausaufgaben){ const hm=MM.Hausaufgaben.mark(k.id,s.typ); if(hm){ b.classList.add(hm.open?"ha-on":"ha-done");
+      const tag=el("span",{class:"ha-tag",title:hm.open?`Hausaufgabe, Abgabe bis ${fmtDate(hm.frist)}`:"Hausaufgabe erledigt"},hm.open?`HA · Level ${hm.levels.join(", ")}`:"HA ✓"); b.appendChild(tag); } }
     if(s.open) b.addEventListener("click",s.go);
     else { b.setAttribute("aria-disabled","true"); b.addEventListener("click",()=>{ note.textContent=s.lock; note.className="cta-note warn"; }); }
     path.appendChild(b); });
+  const plusT=MM.Forder&&MM.Forder.pathTile(k.id); if(plusT){ path.appendChild(el("div",{class:"conn","aria-hidden":"true"},CHEVRON)); path.appendChild(plusT); }
   home.appendChild(path);
   const cta=el("div",{class:"cta-row"});
   if(next){ let txt;
@@ -155,12 +177,9 @@ function renderHome(){
     cta.appendChild(b); }
   else cta.appendChild(el("p",{class:"prompt"},"Kapitel geschafft. Alle Levels lassen sich wiederholen."));
   cta.appendChild(note); home.appendChild(cta);
-  home.appendChild(el("div",{class:"rules"},
-    `<div class="rule"><b>1 · Steckbriefe</b>Karte lesen, Mini-Check lösen, weiterblättern. Mit jedem Steckbrief gehen passende Challenges auf.</div>
-     <div class="rule"><b>2 · Level-Hürde</b>Jedes Level hat ${PRO_LEVEL} Aufgaben. Mit ${HUERDE} Treffern im ersten Versuch steigst du auf.</div>
-     <div class="rule"><b>3 · Aus Fehlern lernen</b>Nach jeder Aufgabe siehst du, warum die Antwort stimmt oder wo der Fehler lag.</div>`));
   const next2=MM.LISTE.find(e=>!isOk(e.id)&&e.nr>k.nr);
   if(next2) home.appendChild(el("div",{class:"locked-k"},`Nächstes Kapitel: <b>${next2.titel}</b>. Es wird freigeschaltet, wenn es im Unterricht dran ist.`));
+  const hwc=MM.Hausaufgaben&&MM.Hausaufgaben.homeCard(); if(hwc) home.appendChild(hwc);
   app.appendChild(home); footer();
 }
 function resetDialog(){
@@ -174,7 +193,7 @@ function resetDialog(){
   inp.addEventListener("input",()=>{ go.disabled=inp.value.trim().toLowerCase()!=="ja"; });
   const row=el("div",{class:"mrow"}); row.append(no,go); box.append(inp,row);
   const close=openModal(box); no.addEventListener("click",close);
-  go.addEventListener("click",()=>{ if(inp.value.trim().toLowerCase()!=="ja") return; P={cards:{},lv:{},best:{}}; save(); close(); renderHome(); });
+  go.addEventListener("click",()=>{ if(inp.value.trim().toLowerCase()!=="ja") return; P={cards:{},lv:{},best:{},x:{}}; save(); close(); renderHome(); });
   setTimeout(()=>{ try{ inp.focus(); }catch(e){} },50); }
 /* Aktualisieren: holt alle App-Dateien frisch vom Server (am Browser-Zwischenspeicher vorbei), erneuert die gespeicherte Offline-Kopie und lädt neu.
    Fortschritt, ID und Einstellungen liegen im localStorage und bleiben unberührt. Nur Caches mit dem Namen „mathe-master-…“ werden angefasst. */
@@ -187,7 +206,7 @@ async function updateNow(btn,stat){
     const urls=new Set([location.pathname,"index.html","sw.js","manifest.webmanifest"].map(abs));
     document.querySelectorAll("script[src],link[rel=stylesheet][href]").forEach(n=>urls.add(abs(n.getAttribute("src")||n.getAttribute("href"))));
     MM.LISTE.forEach(e=>{ if(e.datei) urls.add(abs(e.datei+"?v="+MM.VERSION+"-"+MM.STAND)); });
-    const must=["index.html","js/core.js","js/ui.js","app.css"].map(abs);
+    const must=["index.html","js/core.js","kapitel/stand.js","js/ui.js","app.css"].map(abs);
     const got=[]; let fail=false;
     await Promise.all([...urls].map(async u=>{
       try{ const r=await fetch(u,{cache:"reload"}); if(r.ok) got.push([u,r]); else if(must.includes(u.split("?")[0])) fail=true; }
@@ -247,11 +266,13 @@ function renderFocus(k,start){
     if(sb.merke) tx.appendChild(el("p",{class:"merke"},`<span class="tag">Merke</span><br>${T(sb.merke)}`));
     if(sb.falle) tx.appendChild(el("p",{class:"falle"},`<span class="tag">Wichtig</span><br>${T(sb.falle)}`));
     const side=el("div",{class:"fside"}); card.append(tx,side); stage.appendChild(card);
-    if(sb.viz) sb.viz(side);
+    /* Mit Grafik: Grafik rechts, Beispiele unter dem Text. Ohne Grafik: Beispiele rechts über dem Mini-Check, so bleibt keine Spalte leer. */
+    if(sb.viz){ sb.viz(side); if(sb.beispiele&&MM.Stepper) sb.beispiele.forEach(bsp=>MM.Stepper.mount(tx,bsp)); }
+    else if(sb.beispiele&&MM.Stepper) sb.beispiele.forEach(bsp=>MM.Stepper.mount(side,bsp));
     side.appendChild(checkBox(cid(k,key),sb,updNav));
     let sx=null, sy=null;
     card.addEventListener("pointerdown",e=>{ sx=e.clientX; sy=e.clientY; });
-    card.addEventListener("pointerup",e=>{ if(sx===null) return; const dx=e.clientX-sx, dy=e.clientY-sy; sx=null; if(Math.abs(dx)>90&&Math.abs(dy)<50&&!e.target.closest("canvas,input,.seg,.mctrl,.chips")) go(dx<0?1:-1); });
+    card.addEventListener("pointerup",e=>{ if(sx===null) return; const dx=e.clientX-sx, dy=e.clientY-sy; sx=null; if(Math.abs(dx)>90&&Math.abs(dy)<50&&!e.target.closest("canvas,input,button,.seg,.mctrl,.chips,.stepper")) go(dx<0?1:-1); });
     updNav();
   }
   show(i,0);
@@ -284,23 +305,50 @@ function renderIntro(k,typ){
   wrap.appendChild(lvls); app.appendChild(wrap);
 }
 
-/* ---------- Level spielen ---------- */
-function playLevel(k,typ,n){
+/* ---------- Level spielen ----------
+   Altes Format (lv.make): ein Versuch je Aufgabe, ganze Runde wird gespielt (unverändert).
+   Neues Format V2 (lv.gens = Generatoren, optional {g, steck}):
+   - nach einem Fehler dieselbe Idee mit neuen Zahlen (Übung, ohne Wertung)
+   - ist die Hürde nicht mehr zu schaffen, endet die Runde sofort
+   - zweiter Versuch mit neuen Aufgaben, einen dritten gibt es erst am nächsten Tag */
+const retryGen=g=>{ for(let q=0;q<300;q++){ const r=g(); if(r) return r; } throw new Error("Aufgabe konnte nicht erzeugt werden"); };
+const gEntry=g=>typeof g==="function"?{g}:g;
+function steckKey(k,typ,it){ const D=k.def; if(it&&it.steck&&D.steckbriefe[it.steck]) return it.steck;
+  const b=D.braucht&&D.braucht[typ]; const key=(b&&b[b.length-1])||D.steckOrder[D.steckOrder.length-1]; return D.steckbriefe[key]?key:null; }
+const lockedToday=key=>!!(P.x&&P.x.lock&&P.x.lock[key]===MM.todayIso());
+function renderLocked(k,typ,n){
+  view(true); const D=k.def, def=D.challenges[typ], lv=def.levels[n];
+  bar("← Level",()=>renderIntro(k,typ),def.titel,`Level ${n+1} · ${lv.name}`,null);
+  const card=el("div",{class:"endcard lose"}); card.innerHTML=`<span class="eyebrow">Level ${n+1} · ${lv.name}</span><h3>Für heute reicht es.</h3><p class="msg">Du hast heute schon zwei Versuche gemacht. Lies den Steckbrief, morgen geht es mit frischem Kopf weiter.</p>`;
+  const key=steckKey(k,typ,null); const acts=el("div",{class:"actions",style:"justify-content:center;margin-top:8px"});
+  if(key&&MM.Nachschlagen){ const b=el("button",{class:"btn"},"Steckbrief nachschlagen"); b.addEventListener("click",()=>MM.Nachschlagen.open(k.id,key)); acts.appendChild(b); }
+  const z=el("button",{class:"btn ghost"},"Zum Lernpfad"); z.addEventListener("click",renderHome); acts.appendChild(z); card.appendChild(acts); app.appendChild(card); }
+/* Hinweisstufen (nur Level im neuen Format): 1 = Merke des passenden Steckbriefs, 2 = Formel und Anfang des ersten Beispiels. Auf Wunsch, in der Auswertung ausgewiesen. */
+function hintTexts(k,typ,it){ const key=steckKey(k,typ,it); const sb=key&&k.def.steckbriefe[key]; if(!sb) return [];
+  const h1=sb.merke?`${T(sb.merke)}`:T(sb.text);
+  let h2=sb.formel?tex(sb.formel)+" ":""; const b=sb.beispiele&&sb.beispiele[0];
+  if(b&&b.steps&&b.steps.length){ const st=s=>typeof s==="string"?T(s):T(s.t); h2+=`So fängt ein Beispiel an: ${st(b.steps[0])}${b.steps[1]?" · "+st(b.steps[1]):""}`; } else h2+=T(sb.text);
+  return [`<b>Steckbrief „${T(sb.titel)}“:</b> ${h1}`,h2]; }
+function playLevel(k,typ,n,attempt){
+  attempt=attempt||1;
   view(true);
-  const D=k.def, def=D.challenges[typ], lv=def.levels[n], id=chId(k,typ);
-  let tasks; try{ tasks=lv.make(); }catch(e){ console.error(e); app.appendChild(el("p",{class:"prompt"},"Fehler beim Erzeugen der Aufgaben. Bitte die Seite neu laden.")); return; }
-  const N=tasks.length; const res=[]; let i=0, popIdx=-1;
+  const D=k.def, def=D.challenges[typ], lv=def.levels[n], id=chId(k,typ), v2=!!lv.gens, lkey=id+":"+n;
+  if(v2&&!teacher&&lockedToday(lkey)){ renderLocked(k,typ,n); return; }
+  let items; try{ items=v2?shuffle(lv.gens.map(gEntry)).map(e=>({e,steck:e.steck,task:retryGen(e.g)})):lv.make().map(t=>({task:t})); }catch(e){ console.error(e); app.appendChild(el("p",{class:"prompt"},"Fehler beim Erzeugen der Aufgaben. Bitte die Seite neu laden.")); return; }
+  const tasks=items.map(x=>x.task);
+  const N=tasks.length; const res=[], hintUsed=[]; let i=0, popIdx=-1, lost=false;
   const track=el("div",{class:"track","aria-label":"Fortschritt im Level"});
   const hd=bar("← Level",()=>renderIntro(k,typ),def.titel,`Level ${n+1} · ${lv.name}`,track);
   buchTools(hd,lv.buch||def.buch||k.buch);
   const split=el("div",{class:"split"}); const viz=el("section",{class:"viz"}); const panel=el("section",{class:"panel"}); split.append(viz,panel); app.appendChild(split);
   function drawTrack(){ const fehler=res.filter(x=>x===false).length, erlaubt=N-HUERDE;
     track.innerHTML=[...Array(N)].map((_,q)=>`<i class="${res[q]===true?"ok":res[q]===false?"bad":""}${q===i&&res[q]===undefined?" cur":""}${q===popIdx?" pop":""}"></i>`).join("");
-    const txt=fehler<erlaubt?`Ziel ${HUERDE} / ${N} · noch ${erlaubt-fehler} Fehler frei`:fehler===erlaubt?`Ziel ${HUERDE} / ${N} · kein Fehler mehr frei`:"Hürde verpasst · spiel zu Ende";
+    const txt=v2?((attempt>1?"2. Versuch · ":"")+(fehler>erlaubt?"Hürde verpasst · Probiere es noch einmal!":`${res.filter(Boolean).length} richtig`)):(fehler<erlaubt?`Ziel ${HUERDE} / ${N} · noch ${erlaubt-fehler} Fehler frei`:fehler===erlaubt?`Ziel ${HUERDE} / ${N} · kein Fehler mehr frei`:"Hürde verpasst · Probiere es noch einmal!");
     track.appendChild(el("span",{class:fehler>=erlaubt?"warn":""},txt)); }
-  function run(){
+  const step=()=>{ if(lost||i+1>=N) ende(); else { i++; run(); } };
+  function run(prac){
     cleanup(); viz.innerHTML=""; panel.innerHTML=""; panel.scrollTop=0; drawTrack();
-    const eb=el("div",{class:"ptop"},`<span class="eyebrow">Aufgabe ${i+1} von ${N}</span>`);
+    const eb=el("div",{class:"ptop"},prac?`<span class="eyebrow">Übung · gleiche Idee, neue Zahlen · zählt nicht</span>`:`<span class="eyebrow">Aufgabe ${i+1} von ${N}</span>`);
     const pr=el("p",{class:"prompt"}), hints=el("div",{class:"pbody"}), body=el("div",{class:"pbody"}), fb=el("div",{}), acts=el("div",{class:"actions"});
     panel.append(eb,pr,hints,body,fb,acts);
     const api={viz,panel,body,actions:acts,
@@ -309,11 +357,19 @@ function playLevel(k,typ,n){
       cv:(cls="")=>mkcv(viz,cls),
       legend:html=>{ const l=el("div",{class:"legend"},html); viz.appendChild(l); return l; },
       situation:(t,l)=>{ viz.appendChild(el("div",{class:"situ"},`<span class="eyebrow">${l||"Situation"}</span><p>${t}</p>`)); },
-      feedback:(ok,html,title)=>{ if(ok) MM.Fx.snd.ok(); else MM.Fx.snd.bad(); fb.innerHTML=`<div class="feedback ${ok?"ok":"bad"}"><b>${title||(ok?one(LOBW):"Nicht ganz.")}</b>${html}</div>`; },
-      finish:ok=>{ if(res[i]!==undefined) return; res[i]=!!ok; popIdx=i; drawTrack(); popIdx=-1; acts.innerHTML="";
-        const w=el("button",{class:"btn"},i+1<N?"Weiter →":"Auswertung →"); w.addEventListener("click",()=>{ i++; i<N?run():ende(); }); acts.appendChild(w);
+      feedback:(ok,html,title)=>feedbackInto(fb,ok,html,title),
+      finish:ok=>{
+        if(prac){ if(prac.done) return; prac.done=true; acts.innerHTML=""; const w=el("button",{class:"btn"},i+1<N&&!lost?"Weiter →":"Auswertung →"); w.addEventListener("click",step); acts.appendChild(w); return; }
+        if(res[i]!==undefined) return; res[i]=!!ok; logRes(id+":"+n,!!ok); if(v2&&res.filter(x=>x===false).length>N-HUERDE) lost=true; popIdx=i; drawTrack(); popIdx=-1; acts.innerHTML="";
+        if(v2&&!ok&&!lost){ const pb=el("button",{class:"btn"},"Gleiche Idee, neue Zahlen →"); pb.addEventListener("click",()=>{ let t2=null; try{ t2=retryGen(items[i].e.g); }catch(e){} if(t2) run({task:t2}); else step(); });
+          const sk=el("button",{class:"btn ghost"},"Überspringen"); sk.addEventListener("click",step); acts.append(pb,sk); }
+        else { const w=el("button",{class:"btn"},i+1<N&&!lost?"Weiter →":"Auswertung →"); w.addEventListener("click",step); acts.appendChild(w); }
         requestAnimationFrame(()=>{ try{ panel.scrollTo({top:panel.scrollHeight,behavior:"smooth"}); }catch(e){} }); }};
-    try{ tasks[i].run(api); }catch(e){ console.error(e); panel.appendChild(el("p",{class:"hint"},"Diese Aufgabe konnte nicht geladen werden.")); api.finish(true); }
+    try{ (prac?prac.task:tasks[i]).run(api); }catch(e){ console.error(e); panel.appendChild(el("p",{class:"hint"},"Diese Aufgabe konnte nicht geladen werden.")); api.finish(true); }
+    if(v2&&!prac&&res[i]===undefined){ const hs=hintTexts(k,typ,items[i]); if(hs.length){ let used=0; const hb=el("button",{class:"btn ghost hintbtn",type:"button"},"Hinweis");
+      hb.addEventListener("click",()=>{ if(res[i]!==undefined||used>=hs.length) return; hints.appendChild(el("p",{class:"hint staged"},`<b>Hinweis ${used+1} von ${hs.length}</b><br>${hs[used]}`)); used++; hintUsed[i]=used; hb.textContent=used<hs.length?"Noch ein Hinweis":"Alle Hinweise gezeigt"; hb.disabled=used>=hs.length; });
+      acts.appendChild(hb); } }
+    fitLayout(split,viz,panel);
   }
   function ende(){
     cleanup(); split.remove();
@@ -322,14 +378,22 @@ function playLevel(k,typ,n){
     if(pass){ P.lv[id]=P.lv[id]||[false,false,false]; P.lv[id][n]=true; }
     P.best[id+":"+n]=Math.max(P.best[id+":"+n]||0,hits); save(); drawTrack(); const sp=track.querySelector("span"); if(sp){ sp.textContent=pass?"Level geschafft":"Hürde verpasst"; sp.className=pass?"":"warn"; }
     const card=el("div",{class:"endcard"});
-    card.innerHTML=`<span class="eyebrow">Level ${n+1} · ${lv.name}</span><span class="big" data-of="${N}">${hits} / ${N}</span><span class="muted">Treffer im ersten Versuch</span>`;
+    card.innerHTML=`<span class="eyebrow">Level ${n+1} · ${lv.name}</span><span class="big" data-of="${N}">${hits} / ${N}</span><span class="muted">Treffer im ersten Versuch${v2&&res.filter((r,q)=>r===true&&hintUsed[q]).length?` · davon ${res.filter((r,q)=>r===true&&hintUsed[q]).length} mit Hinweis`:""}</span>`;
     card.appendChild(el("h3",{},pass?(hits===N?"Perfekt. Level geschafft!":"Level geschafft!"):(hits===HUERDE-1?"Knapp daneben.":"Noch nicht geschafft.")));
-    card.appendChild(el("p",{class:"msg"},pass?(hits===N?"Alles im ersten Versuch. Das sitzt.":"Schau dir die Fehler im Steckbrief noch einmal an."):`Für den Aufstieg brauchst du ${HUERDE} von ${N}. Die nächste Runde hat neue Aufgaben.`));
+    card.appendChild(el("p",{class:"msg"},pass?(hits===N?"Alles im ersten Versuch. Das sitzt.":"Schau dir die Fehler im Steckbrief noch einmal an."):(v2?(attempt<2?`${hits} von ${N} geschafft. Probiere es noch einmal, mit neuen Aufgaben.`:`${hits} von ${N} geschafft. Für heute reicht es. Lies den passenden Steckbrief, morgen geht es weiter.`):`Für den Aufstieg brauchst du ${HUERDE} von ${N}. Die nächste Runde hat neue Aufgaben.`)));
+    /* Fehlersteckbrief: passende Karte mit Rechenbeispiel zu den Fehlern dieser Runde */
+    const missKeys=[...new Set(items.map((x,q)=>res[q]===false?steckKey(k,typ,x):null).filter(Boolean))];
+    if(missKeys.length&&MM.Nachschlagen){ const fs=el("div",{class:"fsteck"}); fs.appendChild(el("h4",{},missKeys.length>1?"Dazu passen diese Steckbriefe":"Dazu passt dieser Steckbrief"));
+      missKeys.forEach((key,q)=>{ const sb=D.steckbriefe[key]; const det=el("details",{class:"fsd"}); det.appendChild(el("summary",{},"Steckbrief: "+T(sb.titel)));
+        det.addEventListener("toggle",()=>{ if(det.open&&!det._d){ det._d=true; MM.Nachschlagen.steckLite(det,k,key); } }); if(!pass&&q===0&&missKeys.length===1) det.open=true; fs.appendChild(det); });
+      card.appendChild(fs); }
     if(pass&&!war){ if(n<2) card.appendChild(el("span",{class:"unlock"},`Level ${n+2} ist frei.`)); }
     const acts=el("div",{class:"actions",style:"justify-content:center;margin-top:8px"});
     const btn=(t,fn,ghost)=>{ const b=el("button",{class:"btn"+(ghost?" ghost":"")},t); b.addEventListener("click",fn); acts.appendChild(b); return b; };
     if(pass){ if(n<2) btn(`Level ${n+2} starten →`,()=>playLevel(k,typ,n+1)); else if(nextTyp) btn(`Weiter: ${D.challenges[nextTyp].titel} →`,()=>renderIntro(k,nextTyp)); }
-    else { btn("Neue Runde",()=>playLevel(k,typ,n)); btn("Steckbriefe ansehen",()=>renderFocus(k,0),true); }
+    else if(!v2){ btn("Neue Runde",()=>playLevel(k,typ,n)); btn("Steckbriefe ansehen",()=>renderFocus(k,0),true); }
+    else if(attempt<2){ btn("Zweiter Versuch",()=>playLevel(k,typ,n,2)); btn("Steckbriefe ansehen",()=>renderFocus(k,0),true); }
+    else { P.x=P.x||{}; P.x.lock=P.x.lock||{}; P.x.lock[lkey]=MM.todayIso(); save(); const key0=missKeys[0]||steckKey(k,typ,null); if(key0&&MM.Nachschlagen) btn("Steckbrief nachschlagen",()=>MM.Nachschlagen.open(k.id,key0),true); }
     if((MM.MATHEGYM[k.id]||[]).length) btn("Üben im Mathegym",()=>mathegymModal(k.id),true);
     btn("Zum Lernpfad",renderHome,true);
     card.appendChild(acts); if(MM.Nachweis&&pass){ const h=MM.Nachweis.endHint(); if(h) card.appendChild(h); } app.appendChild(card);
@@ -342,7 +406,7 @@ function playLevel(k,typ,n){
 /* ---------- Start ---------- */
 MM.start=function(){ try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   app.innerHTML='<p class="muted" style="padding:40px;text-align:center">Lade …</p>'; loadChapters(()=>{ renderHome(); }); };
-MM.UI={el,view,bar,themeSwitch,openModal,renderHome,renderIntro,renderFocus,save,isOk,okIds,getK,chId,cid,chOpen,lvPassed,cardsDone,
+MM.UI={fitLayout,steckKey,playLevel,logRes,feedbackInto,lvOpen,el,view,bar,themeSwitch,openModal,renderHome,renderIntro,renderFocus,save,isOk,okIds,getK,chId,cid,chOpen,lvPassed,cardsDone,
   get P(){return P;}, get teacher(){return teacher;}, get status(){return status;}, ready:loadChapters, setTeacher};
 MM._state={get P(){return P;},get teacher(){return teacher;},status,setTeacher,renderHome,renderFocus,renderIntro,playLevel,pinDialog};
 })();

@@ -27,7 +27,7 @@ function mcTask(o){ return {run(api){
       api.feedback(!!op.ok,T((!op.ok&&op.fb?op.fb+" ":"")+o.erkl)); api.finish(!!op.ok); });
     box.appendChild(b); });
   api.body.appendChild(box);
-}};}
+}, spec:o};}
 
 /* ---------- Zahlengerade: Welche Zahlen gehören dazu? ---------- */
 // o: {set, settex (TeX), nums:[...], lo, hi, q, erkl, hint, badge, edge:[Randzahlen]}

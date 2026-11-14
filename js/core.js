@@ -3,7 +3,7 @@
 "use strict";
 const MM = window.MM = window.MM || {};
 let MM_tn;
-MM.VERSION = "1.4"; MM.STAND = "09.11.2026";
+MM.VERSION = "2.0"; MM.STAND = "15.11.2026";   // Übergangsmarke für ältere Geräte. Maßgeblich ist kapitel/stand.js (wird danach geladen und überschreibt diese Werte).
 MM.kapitel = MM.kapitel || {}; MM.LISTE = MM.LISTE || []; MM.MATHEGYM = MM.MATHEGYM || {};
 MM.PRO_LEVEL = 5; MM.HUERDE = 4;   // 5 Aufgaben je Level, bestanden mit 4 Treffern im ersten Versuch
 
@@ -181,5 +181,9 @@ function numline(st,col,o){
 }
 
 MM_tn=tn;
-Object.assign(MM,{el,shuffle,rand,one,pick,ri,esc,TAU,MONO,LOBW,cleanup,cleanups,loop,tn,ts,sg,tex,T,Sets,INF,colors,mkcv,canvasFill,arrow,label,dot,plot,numline});
+/* Seed-Zufall: gleiche Zahlen für gleiche Kennung (Hausaufgaben, Übungsarbeit). Ersetzt Math.random nur während fn() läuft. */
+function hashSeed(str){ let h=2166136261>>>0; str=String(str); for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h>>>0; }
+function mulberry(a){ return function(){ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+function withSeed(seed,fn){ const old=Math.random; Math.random=mulberry(hashSeed(seed)); try{ return fn(); } finally{ Math.random=old; } }
+Object.assign(MM,{hashSeed,withSeed,el,shuffle,rand,one,pick,ri,esc,TAU,MONO,LOBW,cleanup,cleanups,loop,tn,ts,sg,tex,T,Sets,INF,colors,mkcv,canvasFill,arrow,label,dot,plot,numline});
 })();

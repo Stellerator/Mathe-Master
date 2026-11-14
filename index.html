@@ -19,24 +19,34 @@
 <noscript>Für den Mathe-Master wird JavaScript benötigt.</noscript>
 <script src="vendor/katex/katex.min.js"></script>
 <script src="js/core.js"></script>
+<script src="kapitel/stand.js"></script>
 <script src="js/terms.js"></script>
 <script src="js/tasks.js"></script>
 <script src="js/fx.js"></script>
 <script src="js/proof.js"></script>
+<script src="js/eingabe.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/nachweis.js"></script>
+<script src="js/nachschlagen.js"></script>
+<script src="js/wiederholung.js"></script>
+<script src="js/arbeit.js"></script>
+<script src="js/hausaufgaben.js"></script>
+<script src="js/forder.js"></script>
 <script src="kapitel/liste.js"></script>
 <script src="kapitel/mathegym.js"></script>
+<script src="kapitel/termine.js"></script>
+<script src="kapitel/hausaufgaben.js"></script>
+<script src="kapitel/forder.js"></script>
 <script>MM.start();
 if("serviceWorker" in navigator){ window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").then(function(reg){ document.addEventListener("visibilitychange",function(){ if(!document.hidden) reg.update().catch(function(){}); }); }).catch(function(){}); }); }
-/* Update-Hinweis: Beim Start, beim Zurückkehren in die App und beim Wieder-Online-Gehen wird geprüft, ob js/core.js eine neuere Version meldet. */
+/* Update-Hinweis: Beim Start, beim Zurückkehren in die App und beim Wieder-Online-Gehen wird geprüft, ob kapitel/stand.js eine neuere Version meldet. */
 (function(){ var cur=MM.VERSION+"|"+MM.STAND, shown=false, last=0;
   function banner(){ if(shown) return; shown=true; var d=document.createElement("div"); d.className="updbar"; d.setAttribute("role","status");
     var t=document.createElement("span"); t.textContent="Neue Version verfügbar."; var go=document.createElement("button"); go.className="btn"; go.textContent="Jetzt aktualisieren"; go.onclick=function(){ location.reload(); };
     var no=document.createElement("button"); no.className="btn ghost"; no.textContent="Später"; no.onclick=function(){ d.remove(); shown=false; last=Date.now()+600000; };
     d.appendChild(t); d.appendChild(go); d.appendChild(no); document.body.appendChild(d); }
   function check(){ if(shown||Date.now()<last+60000||navigator.onLine===false) return; last=Date.now();
-    fetch("js/core.js?c="+Date.now(),{cache:"no-store"}).then(function(r){ return r.ok?r.text():""; }).then(function(t){
+    fetch("kapitel/stand.js?c="+Date.now(),{cache:"no-store"}).then(function(r){ return r.ok?r.text():""; }).then(function(t){
       var m=/MM\.VERSION\s*=\s*"([^"]+)";\s*MM\.STAND\s*=\s*"([^"]+)"/.exec(t); if(m&&(m[1]+"|"+m[2])!==cur) banner(); }).catch(function(){}); }
   document.addEventListener("visibilitychange",function(){ if(!document.hidden) check(); }); window.addEventListener("online",check); setTimeout(check,4000); })();
 </script>

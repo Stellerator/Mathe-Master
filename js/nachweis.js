@@ -15,8 +15,9 @@ const cfg = () => Object.assign({url:"",hinweis:"",tage:7}, MM.ABGABE||{});
 let ident=null; try{ const s=JSON.parse(localStorage.getItem(IDKEY)||"null"); if(s&&Pr.idOk(s.id)&&typeof s.key==="string") ident=s; }catch(e){}
 const saveIdent=()=>{ try{ if(ident) localStorage.setItem(IDKEY,JSON.stringify(ident)); else localStorage.removeItem(IDKEY); }catch(e){} };
 const curSnap=()=>Pr.snapshot(UI().P);
-const dirty=()=>!!ident&&Pr.sig(curSnap())!==ident.sig;
-const nothingYet=()=>{ const s=curSnap(); return !s.c.length&&!Object.keys(s.l).length; };
+const dirty=()=>!!ident&&(Pr.sig(curSnap())!==ident.sig||Pr.xsig(curX())!==(ident.xs||""));
+const curX=()=>Pr.buildX(UI().P,MM.Wiederholung&&MM.Wiederholung.streak?MM.Wiederholung.streak():0);
+const nothingYet=()=>{ const s=curSnap(); return !s.c.length&&!Object.keys(s.l).length&&!curX(); };
 function ago(ts){ if(!ts) return "noch nie"; const d=Math.floor((Date.now()-ts)/864e5); return d<=0?"heute":d===1?"gestern":`vor ${d} Tagen`; }
 const dayLimit=()=>Math.max(1,+cfg().tage||7);
 
@@ -86,6 +87,7 @@ function renderRegal(){
       const b=el("button",{class:"trophy-card"+(full?" full":"")+(open?"":" locked"),"aria-disabled":String(!open)});
       b.innerHTML=`${seal(full)}<span class="eyebrow">Challenge ${i+1}</span><b>${def.titel}</b><span class="medals">${ps.map((p,n)=>medal(n+1,p,p&&u.P.best[cid+":"+n]>=MM.PRO_LEVEL)).join("")}</span><span class="tst">${full?"Gemeistert":open?ps.filter(Boolean).length+" / 3 Levels":"gesperrt"}</span>`;
       if(open) b.addEventListener("click",()=>u.renderIntro(k,typ)); row.appendChild(b); });
+    const fc=MM.Forder&&MM.Forder.regalCard(kid,seal); if(fc) row.appendChild(fc);
     main.appendChild(shelf); });
   main.appendChild(el("p",{class:"muted rfoot"},"Das Siegel bekommst du, wenn du alle 3 Levels einer Challenge gemeistert hast. Der Stern an einem Level heißt: alle Aufgaben im ersten Versuch richtig."));
 }
@@ -93,13 +95,14 @@ function renderRegal(){
 /* ---------- Stand senden ---------- */
 function sendModal(){
   const u=UI(); if(!ident){ renderRegal(); return; }
-  const box=el("div",{style:"display:flex;flex-direction:column;gap:12px"}); const f=Pr.makeFile(u.P,ident), name=Pr.fileName(f), cf=cfg(), c=counts();
+  const box=el("div",{style:"display:flex;flex-direction:column;gap:12px"}); const f=Pr.makeFile(u.P,ident,undefined,curX()), name=Pr.fileName(f), cf=cfg(), c=counts();
   box.appendChild(el("h3",{},"Stand senden"));
   box.appendChild(el("p",{class:"muted"},`Dein Stand (${f.c.length} Mini-Checks, ${c.med} Levels, ${c.gem} gemeistert) wird als kleine Datei <b>${name}</b> gesichert.`));
+  if(f.x) box.appendChild(el("p",{class:"muted small"},"Enthalten ist auch, wie oft du bei welchem Thema geübt und richtig gelegen hast, dazu deine Übungstage und Arbeiten. Keine einzelnen Antworten und keine Namen."));
   if(cf.hinweis) box.appendChild(el("p",{class:"nhint"},cf.hinweis));
   const msg=el("p",{class:"nmsg"});
   const file=new File([JSON.stringify(f)],name,{type:"application/json"});
-  const done=txt=>{ ident.sig=Pr.sig({c:f.c,l:f.l,b:f.b}); ident.sent=Date.now(); saveIdent(); note(msg,txt,"ok"); MM.Fx.snd.card(); };
+  const done=txt=>{ ident.sig=Pr.sig({c:f.c,l:f.l,b:f.b}); ident.xs=Pr.xsig(f.x||null); ident.sent=Date.now(); saveIdent(); note(msg,txt,"ok"); MM.Fx.snd.card(); };
   const canShare=!!(navigator.canShare&&navigator.share&&(()=>{ try{ return navigator.canShare({files:[file]}); }catch(e){ return false; } })());
   const send=el("button",{class:"btn big"},canShare?"Senden …":"Datei speichern");
   send.addEventListener("click",()=>{
@@ -127,8 +130,8 @@ function restoreModal(){
   const apply=text=>{ try{ const o=Pr.parseAny(text);
       if(o.id!==ident.id) throw new Error("Dieser Stand gehört zu „"+(o.id||"?")+"“, du bist als „"+ident.id+"“ angemeldet.");
       if(!Pr.checkFile(o,ident.key)) throw new Error("Die Prüfsumme passt nicht. Die Datei wurde verändert oder ist beschädigt.");
-      const snap=Pr.clean(o), before=counts(); Pr.mergeInto(u.P,snap); u.save(); const after=counts();
-      note(msg,`Wiederhergestellt: Stand vom ${o.t.slice(8,10)}.${o.t.slice(5,7)}. ${o.t.slice(11,16)} Uhr. Levels: ${before.med} → ${after.med}.`,"ok"); MM.Fx.snd.level(false);
+      const snap=Pr.clean(o), before=counts(); Pr.mergeInto(u.P,snap); const hasX=o.x!==undefined, cx=hasX&&Pr.checkX(o,ident.key)===true?Pr.cleanX(o.x):null, rx=cx?Pr.restoreX(u.P,cx):null; u.save(); const after=counts();
+      note(msg,`Wiederhergestellt: Stand vom ${o.t.slice(8,10)}.${o.t.slice(5,7)}. ${o.t.slice(11,16)} Uhr. Levels: ${before.med} → ${after.med}.`+(rx?" Auch Übung, Hausaufgaben und Plus-Aufgaben sind wieder da.":"")+(hasX&&!cx?" Die Zusatzdaten (Übung, Hausaufgaben) waren verändert und wurden nicht übernommen.":""),"ok"); MM.Fx.snd.level(false);
     }catch(e){ note(msg,e&&e.message&&!/JSON|Unexpected|atob|string/i.test(e.message)?e.message:"Das habe ich nicht verstanden. Bitte die Datei oder den Code genau so verwenden, wie er gesendet wurde.","bad"); } };
   fi.addEventListener("change",()=>{ const f=fi.files&&fi.files[0]; if(!f) return; f.text().then(apply); });
   go.addEventListener("click",()=>{ if(!ta.value.trim()){ note(msg,"Füge zuerst den Stand-Code ein oder wähle eine Datei.","bad"); return; } apply(ta.value); });

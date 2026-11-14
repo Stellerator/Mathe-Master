@@ -15,22 +15,7 @@ MM.LISTE = [
   { id:"k2", nr:2, titel:"Mathe-Sprache", untertitel:"Zahlbereiche, Mengen, Intervalle und Aussagen",
     buch:"Kap. 1 · Check-in (S. 6–7) und Abschnitt 5 · S. 22–23", datei:"kapitel/k2.js" },
   { id:"k3", nr:3, titel:"Lineare Funktionen", untertitel:"", buch:"Kap. 1 · Abschnitt 3 · S. 15–19", datei:"kapitel/k3.js" },
-  { id:"k4", nr:4, titel:"Geraden & Ungleichungen", untertitel:"", buch:"Kap. 1 · Abschnitt 4 und 5 · S. 20–24", datei:"kapitel/k4.js" },
+  { id:"k3v", nr:"3+", titel:"Lineare Funktionen – Vertiefung", untertitel:"Punkt-Steigungs-Form, Hauptform, Linearität, Steigung in Prozent", buch:"Vertiefung zu Kap. 1 · Abschnitt 3 · S. 15–19", datei:"kapitel/k3v.js" },
+  { id:"k4", nr:4, titel:"Geraden & Ungleichungen", untertitel:"Lage von Geraden und Ungleichungen", buch:"Kap. 1 · Abschnitt 4 und 5 · S. 20–24", datei:"kapitel/k4.js" },
   { id:"k5", nr:5, titel:"Parabeln", untertitel:"", buch:"Kap. 1 · Abschnitt 6 bis 8 · S. 25–35", datei:"kapitel/k5.js" }
 ];
-
-/* ============================================================
-   ABGABE · Wohin schicken die SuS ihren Stand (Meine Erfolge → „Stand senden“)?
-
-   Standard: Der Teilen-Dialog des iPads. Dort wählen die SuS „Documents“ oder „Dateien“
-   und legen die Datei im Ordner „Nachweise“ ab.
-   url:     Link zum Abgabe-Ordner (z. B. Nextcloud „Datei-Anfrage“). Er erscheint als Knopf
-            im Senden-Fenster. Leer lassen, wenn du ihn nicht brauchst.
-   hinweis: Kurzer Satz, der im Senden-Fenster steht.
-   tage:    Nach so vielen Tagen ohne Sicherung färbt sich die Anzeige in „Meine Erfolge“ orange.
-   ============================================================ */
-MM.ABGABE = {
-  url: "",
-  hinweis: "Wähle im nächsten Fenster „Documents“ und den Ordner „Nachweise“.",
-  tage: 7
-};

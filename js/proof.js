@@ -93,9 +93,11 @@ function canon(id,t,snap){
   return "mm1|"+id+"|"+t+"|"+snap.c.join(",")+"|"+L+"|"+B; }
 const stamp=(d)=>{ d=d||new Date(); const p=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds()); };
 const signOf=(key,id,t,snap)=>b32(hmac(utf8(key),utf8(canon(id,t,snap))),16);
-function makeFile(P,ident,when){
+function makeFile(P,ident,when,ex){ // ex: optionaler Zusatzblock (buildX), eigene Prüfsumme h2
   const snap=snapshot(P), t=stamp(when);
-  return {mm:1,id:ident.id,t,c:snap.c,l:snap.l,b:snap.b,h:signOf(ident.key,ident.id,t,snap)}; }
+  const f={mm:1,id:ident.id,t,c:snap.c,l:snap.l,b:snap.b,h:signOf(ident.key,ident.id,t,snap)};
+  const cx=ex?cleanX(ex):null; if(cx){ f.x=cx; f.h2=signX(ident.key,ident.id,t,cx); }
+  return f; }
 const fileName=f=>f.id+"_"+f.t.slice(0,10)+"_"+f.t.slice(11,13)+f.t.slice(14,16)+".json";
 function checkFile(f,key){ // true, wenn die Prüfsumme zum Schlüssel passt
   try{ if(!f||f.mm!==1||!idOk(f.id)||!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d$/.test(f.t)||typeof f.h!=="string") return false;
@@ -117,5 +119,94 @@ function mergeSnaps(list){ // Vereinigung mehrerer Stände (für die Lehrkraft)
     Object.keys(s.b).forEach(k=>{ b[k]=Math.max(b[k]||0,s.b[k]); }); });
   return {c:[...c].sort(),l,b}; }
 
-MM.Proof={sha256,hmac,pbkdf2,utf8,master,normId,idOk,keyFor,makeCode,parseCode,snapshot,sig,clean,canon,makeFile,fileName,checkFile,toCode,parseAny,mergeInto,mergeSnaps,stamp,ITER};
+/* ---------- Zusatzblock x (Format 2): Fehlerprofil, Übungsaktivität, Arbeiten, Hausaufgaben, Forder ----------
+   Die Datei bleibt mm:1. Die bisherige Prüfsumme h deckt weiter nur c, l und b ab, ältere Prüf-Dateien lesen neue Stände also unverändert.
+   Der Zusatzblock x hat eine eigene Prüfsumme h2 (gleicher Personenschlüssel). Ohne gültiges h2 wird x ignoriert. */
+const stable=o=>Array.isArray(o)?"["+o.map(stable).join(",")+"]":(o&&typeof o==="object")?"{"+Object.keys(o).sort().map(k=>JSON.stringify(k)+":"+stable(o[k])).join(",")+"}":JSON.stringify(o);
+const r1=v=>Math.round(v*10)/10;
+const clampInt=(v,lo,hi)=>Math.max(lo,Math.min(hi,Math.floor(+v||0)));
+const isoOk=d=>typeof d==="string"&&/^\d{4}-\d\d-\d\d$/.test(d);
+const isoTimeOk=d=>typeof d==="string"&&/^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d)?$/.test(d);
+const localIso=ms=>{ const d=new Date(ms), p=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate()); };
+const idOk2=k=>typeof k==="string"&&/^[A-Za-z0-9_-]{1,16}$/.test(k);
+/* rs: alles, was zum Wiederherstellen nötig ist (Übungstage, Runden, Ziel, Hausaufgaben im Detail, Plus-Tage, „zuletzt geübt“) */
+function buildRs(x){
+  const d=Object.keys(x.days||{}).filter(isoOk).sort().slice(-200), ro=((x.rep&&x.rep.rounds)||[]).map(r=>[r.d,r.h,r.n]), pl=(x.rep&&x.rep.plan)||null, lt={};
+  Object.keys(x.stat||{}).forEach(k=>{ const e=x.stat[k]; if(e&&e.a>0&&e.t>0&&/^[A-Za-z0-9._:-]{1,64}$/.test(k)) lt[k]=localIso(e.t); });
+  const ha={}; Object.keys(x.ha||{}).forEach(id=>{ const e=x.ha[id]; if(!e||!idOk2(id)) return; const a={}; Object.keys(e.a||{}).forEach(i=>{ const q=e.a[i]; a[i]=[q.b,q.n,q.s,q.k||0,q.ts||""]; });
+    ha[id]={a,p:e.p&&e.p.v?[e.p.v,e.p.ts||""]:null,m:e.m&&e.m.ts?e.m.ts:"",done:e.done||"",f:e.f||"",ti:e.ti||"",k:e.k||0,dn:e.dn||0}; });
+  const fo={}; Object.keys(x.fo||{}).forEach(k=>{ if(idOk2(k)&&x.fo[k]) fo[k]=Object.assign({},x.fo[k]); });
+  return {d,ro,pl,lt,ha,fo}; }
+function cleanRs(r){
+  if(!r||typeof r!=="object") return null;
+  const d=(Array.isArray(r.d)?r.d:[]).filter(isoOk).sort().filter((v,i,a)=>!i||v!==a[i-1]).slice(-200);
+  const ro=(Array.isArray(r.ro)?r.ro:[]).filter(e=>Array.isArray(e)&&isoOk(e[0])).map(e=>[e[0],clampInt(e[1],0,99),clampInt(e[2],0,99)]).sort((p,q)=>p[0]<q[0]?-1:p[0]>q[0]?1:(p[1]-q[1])||(p[2]-q[2])).slice(-120);
+  let pl=null; const P=r.pl; if(P&&typeof P==="object"&&isoOk(P.datum)&&isoOk(P.start)) pl={datum:P.datum,titel:String(P.titel||"").replace(/[<>]/g,"").slice(0,40),id:idOk2(P.id)?P.id:"eigen",kapitel:(Array.isArray(P.kapitel)?P.kapitel:[]).filter(q=>typeof q==="string"&&/^[A-Za-z0-9]{1,8}$/.test(q)).slice(0,12),n:clampInt(P.n,0,50),start:P.start,serie:P.serie?1:0};
+  const lt={}; Object.keys(r.lt||{}).slice(0,400).forEach(k=>{ if(/^[A-Za-z0-9._:-]{1,64}$/.test(k)&&isoOk(r.lt[k])) lt[k]=r.lt[k]; });
+  const ha={}; Object.keys(r.ha||{}).slice(0,80).forEach(id=>{ const e=r.ha[id]; if(!idOk2(id)||!e||typeof e!=="object") return; const a={};
+    Object.keys(e.a||{}).forEach(i=>{ if(!/^[0-2]$/.test(i)||!Array.isArray(e.a[i])) return; const q=e.a[i]; a[i]=[clampInt(q[0],0,99),clampInt(q[1],0,99),clampInt(q[2],0,99),clampInt(q[3],0,999),isoTimeOk(q[4])?q[4]:""]; });
+    const p=Array.isArray(e.p)&&["s","g","u"].includes(e.p[0])?[e.p[0],isoTimeOk(e.p[1])?e.p[1]:""]:null;
+    ha[id]={a,p,m:isoTimeOk(e.m)?e.m:"",done:isoTimeOk(e.done)?e.done:"",f:isoOk(e.f)?e.f:"",ti:String(e.ti||"").replace(/[<>]/g,"").slice(0,40),k:clampInt(e.k,0,3),dn:clampInt(e.dn,0,3)}; });
+  const fo={}; Object.keys(r.fo||{}).slice(0,20).forEach(k=>{ if(!idOk2(k)||!r.fo[k]||typeof r.fo[k]!=="object") return; const o={}; Object.keys(r.fo[k]).forEach(i=>{ if(/^[0-7]$/.test(i)&&isoOk(r.fo[k][i])) o[i]=r.fo[k][i]; }); if(Object.keys(o).length) fo[k]=o; });
+  return {d,ro,pl,lt,ha,fo}; }
+/* Aus dem Speicher der App (P.x) den Zusatzblock bauen. sr = aktuelle Serie in Tagen. null, wenn es noch nichts gibt. */
+function buildX(P,sr){ const x=(P&&P.x)||{}, s={};
+  Object.keys(x.stat||{}).sort().slice(0,400).forEach(k=>{ const e=x.stat[k]; if(e&&e.a>0&&/^[A-Za-z0-9._:-]{1,64}$/.test(k)) s[k]=[Math.floor(e.a),r1(Math.min(+e.f||0,e.a))]; });
+  const days=Object.keys(x.days||{}).filter(isoOk).sort(), rounds=(x.rep&&x.rep.rounds)||[];
+  const a=(x.arb||[]).slice(-20).map(e=>({t:e.t==="probe"?"probe":"ueb",d:e.d,h:e.h,p:e.p,n:e.n,k:e.k}));
+  const ha={}; Object.keys(x.ha||{}).sort().slice(0,80).forEach(id=>{ const e=x.ha[id]; if(!e||!idOk2(id)) return;
+    const parts=Object.keys(e.a||{}).sort((p,q)=>p-q).map(i=>[e.a[i].b,e.a[i].n,e.a[i].s]);
+    ha[id]={t:e.done||"",f:e.f||"",ti:String(e.ti||"").slice(0,40),k:e.k||0,d:e.dn||0,a:parts,p:(e.p&&e.p.v)||"",m:e.m&&e.m.ts?1:0}; });
+  const fo={}; Object.keys(x.fo||{}).sort().forEach(k=>{ const e=x.fo[k]; if(!idOk2(k)||!e) return; const n=Math.max(0,...Object.keys(e).map(i=>+i+1)); if(n>0&&n<=8) fo[k]=Array.from({length:n},(_,i)=>e[i]?"1":"0").join(""); });
+  if(!Object.keys(s).length&&!days.length&&!rounds.length&&!a.length&&!Object.keys(ha).length&&!Object.keys(fo).length) return null;
+  return cleanX({v:2,s,d:days.length,z:days.length?days[days.length-1]:"",r:rounds.length,sr:sr||0,a,ha,fo,rs:buildRs(x)}); }
+function cleanX(x){ // macht aus beliebigem JSON einen sauberen Zusatzblock (oder null). Mehrfaches Bereinigen ändert nichts mehr.
+  if(!x||typeof x!=="object"||x.v!==2) return null;
+  const s={}; Object.keys(x.s||{}).slice(0,400).forEach(k=>{ const e=x.s[k]; if(!/^[A-Za-z0-9._:-]{1,64}$/.test(k)||!Array.isArray(e)||!isFinite(+e[0])||!isFinite(+e[1])) return;
+    const a=clampInt(e[0],0,99999), f=r1(Math.max(0,Math.min(a,+e[1]))); if(a>0) s[k]=[a,f]; });
+  const a=(Array.isArray(x.a)?x.a:[]).slice(-20).filter(e=>e&&(e.t==="probe"||e.t==="ueb")&&isoOk(e.d)).map(e=>({t:e.t,d:e.d,h:clampInt(e.h,0,99),p:clampInt(e.p,0,99),n:clampInt(e.n,0,99),k:(Array.isArray(e.k)?e.k:[]).filter(q=>typeof q==="string"&&/^[A-Za-z0-9]{1,8}$/.test(q)).slice(0,12)}));
+  const ha={}; Object.keys(x.ha||{}).slice(0,80).forEach(id=>{ const e=x.ha[id]; if(!idOk2(id)||!e||typeof e!=="object") return;
+    ha[id]={t:isoTimeOk(e.t)?e.t:"",f:isoOk(e.f)?e.f:"",ti:String(e.ti||"").replace(/[<>]/g,"").slice(0,40),k:clampInt(e.k,0,3),d:clampInt(e.d,0,3),
+      a:(Array.isArray(e.a)?e.a:[]).slice(0,3).map(q=>Array.isArray(q)?[clampInt(q[0],0,99),clampInt(q[1],0,99),clampInt(q[2],0,99)]:[0,0,0]),p:["s","g","u"].includes(e.p)?e.p:"",m:e.m?1:0}; });
+  const fo={}; Object.keys(x.fo||{}).slice(0,20).forEach(k=>{ if(idOk2(k)&&typeof x.fo[k]==="string"&&/^[01]{1,8}$/.test(x.fo[k])) fo[k]=x.fo[k]; });
+  return {v:2,s,d:clampInt(x.d,0,9999),z:isoOk(x.z)?x.z:"",r:clampInt(x.r,0,99999),sr:clampInt(x.sr,0,9999),a,ha,fo,rs:cleanRs(x.rs)}; }
+/* Wiederherstellen: fügt den gesicherten Zusatzstand in den Speicher der App ein. Nur dazu, nie weg; Vorhandenes bleibt, wenn es mindestens gleich viel ist. */
+function restoreX(P,cx){
+  const out={stat:0,days:0,rounds:0,arb:0,ha:0,fo:0,plan:false}; if(!cx) return out;
+  const rs=cx.rs||{d:[],ro:[],pl:null,lt:{},ha:{},fo:{}}; P.x=P.x||{}; const X=P.x;
+  X.stat=X.stat||{}; Object.keys(cx.s).forEach(k=>{ const a=cx.s[k][0], f=cx.s[k][1], c=X.stat[k];
+    if(!c||c.a<a||(c.a===a&&c.f<f)){ const lt=rs.lt[k]; X.stat[k]={a,f,t:lt?Date.parse(lt+"T12:00:00"):((c&&c.t)||0)}; out.stat++; } });
+  X.days=X.days||{}; rs.d.forEach(d=>{ if(!X.days[d]){ X.days[d]=1; out.days++; } });
+  X.rep=X.rep||{}; X.rep.rounds=X.rep.rounds||[]; const have=new Set(X.rep.rounds.map(r=>[r.d,r.h,r.n].join("|")));
+  rs.ro.forEach(e=>{ const k=e.join("|"); if(!have.has(k)){ have.add(k); X.rep.rounds.push({d:e[0],h:e[1],n:e[2]}); out.rounds++; } });
+  X.rep.rounds.sort((p,q)=>p.d<q.d?-1:p.d>q.d?1:0); if(X.rep.rounds.length>120) X.rep.rounds.splice(0,X.rep.rounds.length-120);
+  if(!X.rep.plan&&rs.pl){ X.rep.plan=Object.assign({},rs.pl,{serie:!!rs.pl.serie}); out.plan=true; }
+  X.arb=X.arb||[]; const ak=new Set(X.arb.map(e=>[e.t,e.d,e.n,e.h,e.p].join("|")));
+  cx.a.forEach(e=>{ const k=[e.t,e.d,e.n,e.h,e.p].join("|"); if(!ak.has(k)){ ak.add(k); X.arb.push({t:e.t,d:e.d,h:e.h,p:e.p,n:e.n,k:e.k.slice()}); out.arb++; } });
+  X.arb.sort((p,q)=>p.d<q.d?-1:p.d>q.d?1:0); if(X.arb.length>40) X.arb.splice(0,X.arb.length-40);
+  X.ha=X.ha||{}; Object.keys(rs.ha).forEach(id=>{ const n=rs.ha[id]; let c=X.ha[id]; if(!c){ c=X.ha[id]={a:{},p:null,m:null,done:""}; out.ha++; }
+    Object.keys(n.a).forEach(i=>{ const q=n.a[i], cur=c.a[i]; if(!cur||cur.b<q[0]||(cur.b===q[0]&&(cur.k||0)<q[3])) c.a[i]={b:q[0],n:q[1],s:q[2],k:q[3],ts:q[4]}; });
+    if(!c.p&&n.p) c.p={v:n.p[0],ts:n.p[1]}; if((!c.m||!c.m.ts)&&n.m) c.m={ts:n.m};
+    if(n.done&&(!c.done||n.done<c.done)) c.done=n.done; c.f=c.f||n.f; c.ti=c.ti||n.ti; c.k=Math.max(c.k||0,n.k); c.dn=Math.max(c.dn||0,n.dn); });
+  X.fo=X.fo||{}; Object.keys(rs.fo).forEach(k=>{ X.fo[k]=X.fo[k]||{}; Object.keys(rs.fo[k]).forEach(i=>{ if(!X.fo[k][i]){ X.fo[k][i]=rs.fo[k][i]; out.fo++; } }); });
+  return out; }
+const signX=(key,id,t,x)=>b32(hmac(utf8(key),utf8("mx2|"+id+"|"+t+"|"+stable(x))),16);
+function checkX(f,key){ // null: kein Zusatzblock, true: gültig, false: Prüfsumme passt nicht
+  if(!f||f.x===undefined) return null;
+  try{ const cx=cleanX(f.x); return !!cx&&typeof f.h2==="string"&&signX(key,f.id,f.t,cx)===f.h2; }catch(e){ return false; } }
+/* Fingerabdruck für „neuer Stand?“: ohne Serie und letzten Tag, damit nur echtes Üben zählt */
+const xsig=x=>x?stable(Object.assign({},x,{sr:0,z:""})):"";
+function mergeX(list){ // list: [{t, x}] (mehrere Dateien einer Person): je Thema der Stand mit mehr Aufgaben, Arbeiten vereinigt, Hausaufgaben: früheste Erledigung
+  list=list.filter(e=>e&&e.x).sort((p,q)=>String(p.t).localeCompare(String(q.t))); if(!list.length) return null;
+  const s={}, seen=new Set(), a=[], ha={}, fo={}; let d=0,r=0,z="";
+  list.forEach(e=>{ const x=e.x; Object.keys(x.s).forEach(k=>{ const c=s[k], n=x.s[k]; if(!c||n[0]>c[0]||(n[0]===c[0]&&n[1]>c[1])) s[k]=n.slice(); });
+    d=Math.max(d,x.d); r=Math.max(r,x.r); if(x.z>z) z=x.z;
+    x.a.forEach(q=>{ const key=[q.t,q.d,q.n,q.h,q.p].join("|"); if(!seen.has(key)){ seen.add(key); a.push(q); } });
+    Object.keys(x.ha||{}).forEach(id=>{ const n=x.ha[id], c=ha[id]; if(!c){ ha[id]=JSON.parse(JSON.stringify(n)); return; }
+      if(n.t&&(!c.t||n.t<c.t)){ ha[id]=JSON.parse(JSON.stringify(n)); return; } if(!n.t&&!c.t&&n.d>c.d) ha[id]=JSON.parse(JSON.stringify(n)); });
+    Object.keys(x.fo||{}).forEach(k=>{ const o=fo[k]||"", n=x.fo[k], L=Math.max(o.length,n.length); let m=""; for(let i=0;i<L;i++) m+=(o[i]==="1"||n[i]==="1")?"1":"0"; fo[k]=m; }); });
+  a.sort((p,q)=>(p.d<q.d?-1:p.d>q.d?1:0)); const last=list[list.length-1].x;
+  return {v:2,s,d,z,r,sr:last.sr,a:a.slice(-20),ha,fo}; }
+
+MM.Proof={restoreX,buildX,cleanX,signX,checkX,xsig,mergeX,sha256,hmac,pbkdf2,utf8,master,normId,idOk,keyFor,makeCode,parseCode,snapshot,sig,clean,canon,makeFile,fileName,checkFile,toCode,parseAny,mergeInto,mergeSnaps,stamp,ITER};
 })();
