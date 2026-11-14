@@ -17,7 +17,7 @@ MM.LISTE = [
   { id:"k3", nr:3, titel:"Lineare Funktionen", untertitel:"",
     buch:"Kap. 1 · Abschnitt 3 · S. 15–19", datei:"kapitel/k3.js" },
   { id:"k3v", nr:"3+", titel:"Lineare Funktionen – Vertiefung", untertitel:"Punkt-Steigungs-Form, Hauptform, Linearität, Steigung in Prozent",
-    buch:"Vertiefung zu Kap. 1 · Abschnitt 3 · S. 15–19", datei:"kapitel/k3v.js" },
+    buch:"Vertiefung zu Kap. 1 · Abschnitt 3 · S. 15–19", datei:"kapitel/k3v.js", ab:"2026-11-17"  },
   { id:"k4", nr:4, titel:"Geraden & Ungleichungen", untertitel:"Lage von Geraden und Ungleichungen",
     buch:"Kap. 1 · Abschnitt 4 und 5 · S. 20–24", datei:"kapitel/k4.js", ab:"2026-11-18" },
   { id:"k5", nr:5, titel:"Parabeln", untertitel:"",
