@@ -77,3 +77,8 @@ Unten in der App steht neben „Fortschritt zurücksetzen“ der Knopf „Aktual
 ## Einstellungen ohne Editor (Nachweise-App V2, Abschnitt 4)
 
 Klassenarbeiten (`termine.js`), Mathegym-Aufgaben (`mathegym.js`), Kapitel-Freigabe per Datum, Abgabe-Link und Lehrkraft-PIN (`liste.js`) und das Datum des Standes (`stand.js`) werden im Abschnitt „4 · Einstellungen“ der Nachweise-App V2 eingestellt. Die Felder sind mit dem Stand der Dateien beim Bau der Nachweise-App vorbelegt. Aktuelle Dateien (oder den ganzen Ordner `kapitel`) kannst du per Drag and drop hineinziehen; es werden nur `termine.js`, `mathegym.js`, `liste.js`, `stand.js` und `hausaufgaben.js` gelesen. Gespeichert wird als Download, danach die Dateien im Repo ersetzen. Drag and drop gilt auch beim „Nachweise prüfen“ (mehrere Dateien und Ordner). Hinweis: Der PIN steht im Klartext in `liste.js`.
+
+
+## Gespeicherte Stände (Nachweise-App V2, Schritt 2)
+
+Jeder gültige Stand, den du in „Nachweise prüfen“ prüfst, bleibt in diesem Browser gespeichert (je Person die neuesten fünf Dateien, abschaltbar über „Klassen und geprüfte Stände auf diesem Gerät merken“). Beim nächsten Prüfen genügen das Passwort und die Klassenliste; neue Dateien ergänzen den gespeicherten Stand. Das Passwort wird nie gespeichert, die gespeicherten Stände werden bei jedem Prüfen neu gegen das Passwort kontrolliert. Mit „Stände sichern …“ entsteht die Datei `Mathe-Master-Staende-Sicherung-DATUM.json` (nur IDs und signierte Stände, keine Namen); sie lässt sich per Drag and drop oder „Sicherung laden …“ zurückholen. Die Klassen-Sicherung bleibt davon getrennt.

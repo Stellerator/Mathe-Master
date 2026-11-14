@@ -5,8 +5,4 @@
    ============================================================ */
 window.MM = window.MM || {};
 MM.HAUSAUFGABEN = [
-  { id:"ha01", titel:"Punktprobe", start:"2026-11-13", frist:"2026-11-15",
-    teile:[
-      { typ:"app", titel:"Punkt-Treffer, Level 2", kapitel:"k3", challenge:"punkte", level:2, n:5, schwelle:4 }
-    ] }
 ];

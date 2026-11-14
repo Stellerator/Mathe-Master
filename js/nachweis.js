@@ -98,7 +98,6 @@ function sendModal(){
   const box=el("div",{style:"display:flex;flex-direction:column;gap:12px"}); const f=Pr.makeFile(u.P,ident,undefined,curX()), name=Pr.fileName(f), cf=cfg(), c=counts();
   box.appendChild(el("h3",{},"Stand senden"));
   box.appendChild(el("p",{class:"muted"},`Dein Stand (${f.c.length} Mini-Checks, ${c.med} Levels, ${c.gem} gemeistert) wird als kleine Datei <b>${name}</b> gesichert.`));
-  if(f.x) box.appendChild(el("p",{class:"muted small"},"Enthalten ist auch, wie oft du bei welchem Thema geübt und richtig gelegen hast, dazu deine Übungstage und Arbeiten. Keine einzelnen Antworten und keine Namen."));
   if(cf.hinweis) box.appendChild(el("p",{class:"nhint"},cf.hinweis));
   const msg=el("p",{class:"nmsg"});
   const file=new File([JSON.stringify(f)],name,{type:"application/json"});

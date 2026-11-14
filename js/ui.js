@@ -177,8 +177,6 @@ function renderHome(){
     cta.appendChild(b); }
   else cta.appendChild(el("p",{class:"prompt"},"Kapitel geschafft. Alle Levels lassen sich wiederholen."));
   cta.appendChild(note); home.appendChild(cta);
-  const next2=MM.LISTE.find(e=>!isOk(e.id)&&e.nr>k.nr);
-  if(next2) home.appendChild(el("div",{class:"locked-k"},`Nächstes Kapitel: <b>${next2.titel}</b>. Es wird freigeschaltet, wenn es im Unterricht dran ist.`));
   const hwc=MM.Hausaufgaben&&MM.Hausaufgaben.homeCard(); if(hwc) home.appendChild(hwc);
   app.appendChild(home); footer();
 }
