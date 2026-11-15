@@ -95,6 +95,10 @@ function homeButtons(){
   if (dueToday(plan()) && !(flameState())) b.appendChild(el("i", { class: "ndot", title: "Heute ist eine Runde empfohlen" }));
   b.addEventListener("click", renderRep); const f = flameButton(); return f ? [b, f] : [b]; }
 
+/* ---------- Symbole der Bereiche (Wiederholen-Seite) ---------- */
+const ICO = { ziel: `<path d="M5 21V4"/><path d="M5 4h11l-2.5 4L16 12H5"/>`, probe: `<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4"/><path d="M10 12h6M10 16h6"/>`, stand: `<path d="M5 20V11M12 20V4M19 20v-6"/>` };
+MM.RepIcon = kind => `<span class="sico" aria-hidden="true">` + (kind === "heute" ? FLAME(20) : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICO[kind] || ""}</svg>`) + `</span>`;
+
 /* ---------- Übersicht ---------- */
 function renderRep(){
   const u = U(); u.view(false);
@@ -103,14 +107,14 @@ function renderRep(){
   const p = plan(), all = topics(p && p.kapitel);
 
   /* Ziel */
-  const goal = el("section", { class: "card" }); main.appendChild(goal);
+  const goal = el("section", { class: "card sec sec-ziel" }); main.appendChild(goal);
   const kaps = u.okIds().map(id => u.getK(id)).filter(Boolean);
   const sizeSelect = cur => { const sel = el("select", { "aria-label": "Aufgaben pro Runde" }); SIZES.forEach(n => sel.appendChild(el("option", { value: String(n) }, n + " Aufgaben"))); sel.value = String(cur || RUNDE); return sel; };
   const kapBoxes = chosen => { const wrap = el("div", { class: "kaps" }), cbs = [];
     kaps.forEach(k => { const l = el("label", { class: "row" }); const cb = el("input", { type: "checkbox" }); cb.value = k.id; cb.checked = !chosen || !chosen.length || chosen.includes(k.id); cbs.push(cb); l.append(cb, document.createTextNode(" Kapitel " + k.nr + " · " + k.titel)); wrap.appendChild(l); });
     wrap.value = () => { const ids = cbs.filter(c => c.checked).map(c => c.value); return ids.length === kaps.length ? [] : ids; }; wrap.count = () => cbs.filter(c => c.checked).length; return wrap; };
   if (!p) {
-    goal.innerHTML = `<h3>Dein Ziel</h3><p class="muted">Stelle dein Ziel ein: Termin der Klassenarbeit, Aufgaben pro Runde und die Kapitel, die dran sind. Die App empfiehlt dir dann einen Übungsrhythmus. Das ist freiwillig.</p>`;
+    goal.innerHTML = `<h3>${MM.RepIcon("ziel")}Dein Ziel</h3><p class="muted">Stelle dein Ziel ein: Termin der Klassenarbeit, Aufgaben pro Runde und die Kapitel, die dran sind. Die App empfiehlt dir dann einen Übungsrhythmus. Das ist freiwillig.</p>`;
     const row = el("div", { class: "row" }); const sel = el("select", { "aria-label": "Termin wählen" });
     (MM.TERMINE || []).filter(t => daysTo(t.datum) >= 0).forEach(t => sel.appendChild(el("option", { value: t.datum + "|" + t.id }, `${t.titel} · ${fmt(t.datum)}`)));
     sel.appendChild(el("option", { value: "eigen" }, "Eigenes Datum …"));
@@ -130,47 +134,56 @@ function renderRep(){
     if (!(MM.TERMINE || []).length) sel.value = "eigen", dt.hidden = false;
   } else {
     const d = daysTo(p.datum), r = rhythm(p), seit = REP().rounds.filter(q => dnum(q.d) >= dnum(p.start)).length, n = roundSize(p);
-    goal.innerHTML = `<h3>Dein Ziel: ${p.titel} am ${fmt(p.datum)}</h3><p>${d === 0 ? "<b>Heute ist es so weit.</b>" : d === 1 ? "<b>Morgen</b> ist es so weit." : ""} Empfehlung: ${r.txt} (je ${n} Aufgaben, etwa ${n} Minuten).</p>
+    goal.innerHTML = `<h3>${MM.RepIcon("ziel")}Dein Ziel: ${p.titel} am ${fmt(p.datum)}${d > 1 ? `<span class="cd">noch ${d} Tage</span>` : ""}</h3><p>${d === 0 ? "<b>Heute ist es so weit.</b>" : d === 1 ? "<b>Morgen</b> ist es so weit." : ""} Empfehlung: ${r.txt} (je ${n} Aufgaben, etwa ${n} Minuten).</p>
       <p class="geschafft">${seit ? `<b>${seit} ${seit === 1 ? "Runde" : "Runden"} geschafft.</b> Das zählt.` : `Die erste Runde fehlt noch. Sie dauert nur etwa ${n} Minuten.`}</p>`;
     const row = el("div", { class: "row" });
     const sv = el("label", { class: "row" }); const cb = el("input", { type: "checkbox" }); cb.checked = !!p.serie;
     cb.addEventListener("change", () => { p.serie = cb.checked; save(); renderRep(); });
     sv.append(cb, document.createTextNode(" Übungs-Serie anzeigen und beim Öffnen erinnern")); row.appendChild(sv);
     const rm = el("button", { class: "linkbtn" }, "Ziel entfernen"); rm.addEventListener("click", () => { delete REP().plan; save(); renderRep(); });
-    row.appendChild(rm); goal.appendChild(row);
+    row.appendChild(rm);
+    const set = el("details", { class: "fsd" }); set.appendChild(el("summary", {}, "Einstellungen"));
+    set.appendChild(row);
     /* anpassen: Aufgaben pro Runde und Kapitel */
     const det = el("details", { class: "fsd" }); det.appendChild(el("summary", {}, "Anpassen: Aufgaben pro Runde und Kapitel"));
     const nRow = el("div", { class: "row" }); const nSel = sizeSelect(n); nRow.append(el("span", {}, "Pro Runde:"), nSel); nSel.addEventListener("change", () => { p.n = +nSel.value; save(); renderRep(); });
     const bx = kapBoxes(p.kapitel); bx.addEventListener("change", () => { if (!bx.count()) return; p.kapitel = bx.value(); save(); renderRep(); });
-    det.append(nRow, el("p", { class: "muted" }, "Diese Kapitel kommen dran:"), bx); goal.appendChild(det);
+    det.append(nRow, el("p", { class: "muted" }, "Diese Kapitel kommen dran:"), bx); set.appendChild(det); goal.appendChild(set);
     if (p.serie) { const s = streak(); goal.appendChild(el("p", { class: "streak" }, s ? `Serie: ${s} ${s === 1 ? "Tag" : "Tage"}` : "Serie: noch nicht gestartet")); goal.appendChild(el("p", { class: "muted" }, "Ein freier Tag dazwischen ist erlaubt. Nach zwei Tagen Pause beginnt die Serie neu.")); }
   }
 
   /* Heute */
-  const today = el("section", { class: "card" }); main.appendChild(today);
-  if (!all.length) { today.innerHTML = `<h3>Heute üben</h3><p class="muted">Sobald du die ersten Level geschafft hast, kannst du hier gemischt wiederholen.</p>`; }
+  const today = el("section", { class: "card sec sec-heute" }); main.appendChild(today);
+  if (!all.length) { today.innerHTML = `<h3>${MM.RepIcon("heute")}Heute üben</h3><p class="muted">Sobald du die ersten Level geschafft hast, kannst du hier gemischt wiederholen.</p>`; }
   else {
     const due = dueToday(p), nt = roundsToday();
-    today.innerHTML = `<h3>Heute üben</h3><p>${p ? (nt ? `<b>Heute geschafft.</b> Eine weitere Runde ist freiwillig.` : due ? "<b>Heute ist eine Runde empfohlen.</b>" : "Heute musst du nichts tun. Eine Runde schadet aber nicht.") : "Gemischte Aufgaben aus allen Kapiteln, die du schon freigeschaltet hast."} ${roundSize(p)} Aufgaben, Themen mit Fehlern kommen öfter.</p>`;
+    today.innerHTML = `<h3>${MM.RepIcon("heute")}Heute üben</h3><p>${p ? (nt ? `<b>Heute geschafft.</b> Eine weitere Runde ist freiwillig.` : due ? "<b>Heute ist eine Runde empfohlen.</b>" : "Heute musst du nichts tun. Eine Runde schadet aber nicht.") : "Gemischte Aufgaben aus allen Kapiteln, die du schon freigeschaltet hast."} ${roundSize(p)} Aufgaben, Themen mit Fehlern kommen öfter.</p>`;
     const row = el("div", { class: "row" });
     const b1 = el("button", { class: "btn big" }, `Runde starten (${roundSize(p)} Aufgaben)`); b1.addEventListener("click", () => start(p, false));
     row.appendChild(b1);
     if (all.some(t => t.stat && t.stat.a >= 3 && t.stat.f / t.stat.a >= 0.3)) { const b2 = el("button", { class: "btn ghost" }, "Nur Schwerpunkte"); b2.addEventListener("click", () => start(p, true)); row.appendChild(b2); }
     today.appendChild(row); }
 
-  /* Probearbeit und Übungsarbeit */
+  /* Probearbeit */
   if (MM.Arbeit) MM.Arbeit.menuCards(main);
 
-  /* Schwerpunkte */
+  /* Mein Stand (eingeklappt): Schwerpunkte, Probearbeiten, letzte Runden */
   const rated = all.filter(t => t.stat && t.stat.a >= 3).map(t => ({ t, ok: Math.round(100 * (1 - t.stat.f / t.stat.a)) }));
   const stark = rated.filter(x => x.ok >= 80).sort((a, b) => b.ok - a.ok).slice(0, 4);
   const uebung = rated.filter(x => x.ok < 80).sort((a, b) => a.ok - b.ok).slice(0, 3);
   const row = x => el("div", { class: "topic" }, `<span>${T(x.t.titel)} · Level ${x.t.n + 1}<br><i>${agoTxt(x.t.stat.t)}</i></span><div class="bar2" aria-hidden="true"><b style="width:${x.ok}%"></b></div><span class="muted">${x.ok} % richtig</span>`);
-  if (stark.length) { const sec = el("section", { class: "card" }); sec.appendChild(el("h3", {}, "Das sitzt schon")); const box = el("div", { class: "topics" }); stark.forEach(x => box.appendChild(row(x))); sec.appendChild(box); main.appendChild(sec); }
-  if (uebung.length) { const sec = el("section", { class: "card" }); sec.appendChild(el("h3", {}, "Hier lohnt sich noch Übung")); const box = el("div", { class: "topics" }); uebung.forEach(x => box.appendChild(row(x))); sec.appendChild(box); main.appendChild(sec); }
-  const hc = MM.Arbeit && MM.Arbeit.historyCard(); if (hc) main.appendChild(hc);
+  const subs = [];
+  const sub = (title, list) => { const s = el("div", { class: "sub" }, `<h4>${title}</h4>`); const box = el("div", { class: "topics" }); list.forEach(x => box.appendChild(row(x))); s.appendChild(box); subs.push(s); };
+  if (stark.length) sub("Das sitzt schon", stark);
+  if (uebung.length) sub("Hier lohnt sich noch Übung", uebung);
+  const hc = MM.Arbeit && MM.Arbeit.historyCard(); if (hc) subs.push(hc);
   const rr = REP().rounds.slice(-5).reverse();
-  if (rr.length) main.appendChild(el("section", { class: "card" }, `<h3>Letzte Runden</h3>` + rr.map(q => `<div class="topic"><span>${fmt(q.d)}</span><span>${q.h} von ${q.n} richtig</span></div>`).join("")));
+  if (rr.length) subs.push(el("div", { class: "sub" }, `<h4>Letzte Runden</h4>` + rr.map(q => `<div class="topic"><span>${fmt(q.d)}</span><span>${q.h} von ${q.n} richtig</span></div>`).join("")));
+  if (subs.length) {
+    const nR = REP().rounds.length, nP = ((u.P.x && u.P.x.arb) || []).filter(a => a.t === "probe").length;
+    const det = el("details", { class: "card sec sec-stand" });
+    det.appendChild(el("summary", {}, `${MM.RepIcon("stand")}Mein Stand<span class="muted sumtxt">${[nR ? `${nR} ${nR === 1 ? "Runde" : "Runden"}` : "", nP ? `${nP} ${nP === 1 ? "Probearbeit" : "Probearbeiten"}` : ""].filter(Boolean).join(" · ")}</span>`));
+    const inner = el("div", { class: "stand" }); subs.forEach(x => inner.appendChild(x)); det.appendChild(inner); main.appendChild(det); }
 }
 
 /* ---------- Runde spielen ---------- */

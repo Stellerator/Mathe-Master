@@ -1,5 +1,5 @@
-/* Mathe-Master · Arbeiten: Übungsarbeit und Probearbeit
-   Übungsarbeit: Aufgaben nur für dich (Zahlen aus dem Aktivierungscode), Rechnen im Heft, danach Lösung kontrollieren und selbst bewerten
+/* Mathe-Master · Arbeiten: gemischte Übung und Probearbeit
+   Gemischte Übung (früher „Übungsarbeit“): Aufgaben nur für dich (Zahlen aus dem Aktivierungscode), Rechnen im Heft, danach Lösung kontrollieren und selbst bewerten
    (richtig / teilweise / nicht gelöst). Probearbeit: wenige gemischte Aufgaben mit Richtzeit, keine Rückmeldung nach der einzelnen Aufgabe,
    Auswertung mit Musterlösungen erst am Ende.
    Beides ändert keinen Lernstand (Steckbriefe, Levels, Bestwerte). Ergebnisse gehen ins Fehlerprofil (P.x.stat) und in P.x.arb. */
@@ -73,12 +73,12 @@ function baseApi(F, P, extra){
 // items: [{task, topic, steck}], score: [0..1 pro Aufgabe oder null], kind: "probe"|"ueb"
 function summary(items, score, kind, meta){
   const u = U(); u.view(false);
-  u.bar("← Wiederholen", renderMenu, "Mathe-Master", kind === "probe" ? "Probearbeit: Auswertung" : "Übungsarbeit: Auswertung", u.themeSwitch());
+  u.bar("← Wiederholen", renderMenu, "Mathe-Master", kind === "probe" ? "Probearbeit: Auswertung" : "Gemischte Übung: Auswertung", u.themeSwitch());
   const main = el("main", { class: "arbeit" }); app().appendChild(main);
   const N = items.length, full = score.filter(s => s === 1).length, half = score.filter(s => s === 0.5).length;
   const pts = score.reduce((a, s) => a + (s || 0), 0);
   const card = el("section", { class: "card win" });
-  card.innerHTML = `<span class="eyebrow">${kind === "probe" ? "Probearbeit" : "Übungsarbeit"}${meta.titel ? " · " + meta.titel : ""}</span><h3>${full} von ${N} Aufgaben gelöst${half ? `, ${half} teilweise` : ""}</h3>` +
+  card.innerHTML = `<span class="eyebrow">${kind === "probe" ? "Probearbeit" : "Gemischte Übung"}${meta.titel ? " · " + meta.titel : ""}</span><h3>${full} von ${N} Aufgaben gelöst${half ? `, ${half} teilweise` : ""}</h3>` +
     (meta.min !== undefined ? `<p class="muted">Bearbeitungszeit: ${meta.min} Min. (Richtzeit ${meta.soll} Min.)</p>` : "") +
     `<p>${W() && W().endText ? W().endText(pts, N) : ""}</p>`;
   main.appendChild(card);
@@ -103,7 +103,7 @@ function summary(items, score, kind, meta){
     const inner = el("div", { class: "slite" }); inner.innerHTML = (sp && sp.q ? `<p>${T(sp.q)}</p>` : "") + `<p>${(it.fbHtml && !(sp && solHtml(sp))) ? it.fbHtml : solHtml(sp) || it.fbHtml || "Siehe Aufgabe."}</p>`;
     det.appendChild(inner); rev.appendChild(det); });
   main.appendChild(rev);
-  const acts = el("div", { class: "row" }); const again = el("button", { class: "btn" }, kind === "probe" ? "Noch eine Probearbeit" : "Neue Übungsarbeit"); again.addEventListener("click", renderMenu);
+  const acts = el("div", { class: "row" }); const again = el("button", { class: "btn" }, kind === "probe" ? "Noch eine Probearbeit" : "Neue gemischte Übung"); again.addEventListener("click", renderMenu);
   const home = el("button", { class: "btn ghost" }, "Zum Lernpfad"); home.addEventListener("click", u.renderHome); acts.append(again, home); main.appendChild(acts);
   MM.Fx.snd.level(pts >= N); }
 function record(items, score, kind, meta){
@@ -136,11 +136,11 @@ function playProbe(items, meta){
   function ende(){ stopT(); const min = Math.max(1, Math.round((Date.now() - t0) / 60000)); MM.cleanup(); record(items, score, "probe", { kids: [meta.kid] }); summary(items, score, "probe", { titel: meta.titel, min, soll }); }
   run(); }
 
-/* ---------- Übungsarbeit (Rechnen im Heft) ---------- */
+/* ---------- Gemischte Übung (Rechnen im Heft) ---------- */
 function playPaper(items, meta){
   const N = items.length; const score = new Array(N).fill(null); let i = 0;
   const track = el("div", { class: "track", "aria-label": "Fortschritt" });
-  const F = frame("← Abbrechen", renderMenu, "Übungsarbeit" + (meta.titel ? " · " + meta.titel : ""), "Aufgabe 1 von " + N, track);
+  const F = frame("← Abbrechen", renderMenu, "Gemischte Übung" + (meta.titel ? " · " + meta.titel : ""), "Aufgabe 1 von " + N, track);
   const draw = () => { track.innerHTML = [...Array(N)].map((_, q) => `<i class="${score[q] === 1 ? "ok" : score[q] === 0.5 ? "" : score[q] === 0 ? "bad" : ""}${q === i && score[q] === null ? " cur" : ""}"></i>`).join("") + `<span>${score.filter(s => s !== null).length} bearbeitet</span>`; };
   const setTitle = () => { const h = F.hd.querySelector("h2"); if (h) h.textContent = `Aufgabe ${i + 1} von ${N}`; };
   function next(){ if (i + 1 < N){ i++; run(); } else { MM.cleanup(); record(items, score, "ueb", { kids: meta.kids }); summary(items, score, "ueb", { titel: meta.titel }); } }
@@ -164,32 +164,22 @@ function playPaper(items, meta){
 /* ---------- Karten für die Seite „Wiederholen“ ---------- */
 const back = () => (MM.Wiederholung ? MM.Wiederholung.renderRep() : U().renderHome());
 function renderMenu(){ back(); }
-function homeButtons(){ return []; }   // kein eigenes Symbol mehr: Probe- und Übungsarbeit liegen unter „Wiederholen“
+function homeButtons(){ return []; }   // kein eigenes Symbol mehr: Probearbeit und gemischte Übung liegen unter „Wiederholen“
 function menuCards(main){
   const u = U(); const ids = u.okIds().map(id => u.getK(id)).filter(Boolean); if (!ids.length) return;
-  const me = ident();
 
-  /* Probearbeit */
-  const pa = el("section", { class: "card" }); pa.innerHTML = `<h3>Probearbeit</h3><p>${N_PROBE} gemischte Aufgaben zu einem Kapitel mit einer Richtzeit von ${N_PROBE * MIN_PRO_AUFGABE} Minuten. Nach den einzelnen Aufgaben gibt es keine Rückmeldung. Die Auswertung mit Musterlösungen kommt am Ende, so wie in der Klassenarbeit.</p>`;
-  const sel = el("select", { "aria-label": "Kapitel für die Probearbeit wählen" }); ids.forEach(k => sel.appendChild(el("option", { value: k.id }, "Kapitel " + k.nr + " · " + k.titel))); sel.value = ids[ids.length - 1].id;
-  const msg2 = el("p", { class: "muted" }); const go2 = el("button", { class: "btn big" }, "Probearbeit starten");
-  go2.addEventListener("click", () => { const kid = sel.value, n = ARB().filter(a => a.t === "probe").length; const items = buildProbe(kid, (me ? me.id : "gast" + Date.now()) + "|probe|" + kid + "|" + n + "|" + Date.now());
-    if (items.length < 3){ msg2.textContent = "In diesem Kapitel sind noch zu wenige Level freigeschaltet."; return; } playProbe(items, { kid, titel: "Kapitel " + u.getK(kid).nr }); });
-  const row2 = el("div", { class: "row" }); row2.append(sel, go2); pa.append(row2, msg2); main.appendChild(pa);
+  /* Probearbeit: ein Blatt über den ganzen Stoff bis zur Klassenarbeit (kapitel/probeblaetter.js) */
+  const PB = MM.Probeblatt, pa = el("section", { class: "card sec sec-probe" }), pk = PB && PB.has() ? PB.kapitel() : [];
+  pa.innerHTML = `<h3>${MM.RepIcon ? MM.RepIcon("probe") : ""}Probearbeit</h3>` + (pk.length
+    ? `<p>Ein Blatt mit Aufgaben aus dem gesamten Stoff bis zur Klassenarbeit (Kapitel ${PB.kNamen(pk)}), so wie in der Klassenarbeit: mehrere mehrteilige Aufgaben (a, b, c), <b>${MM.PROBEARBEIT.min} Minuten</b> Bearbeitungszeit. Du rechnest im Heft und deckst danach mit einem Klick die Musterlösung auf. Jede Probearbeit hat andere Aufgaben.</p>${PB.nochText() ? `<p class="muted">${PB.nochText()}</p>` : ""}`
+    : `<p class="muted">Sobald Kapitel freigeschaltet sind, findest du hier die Probearbeit.</p>`);
+  if (pk.length){ const go2 = el("button", { class: "btn big" }, "Probearbeit öffnen"); go2.addEventListener("click", () => PB.show({ kids: pk })); const row2 = el("div", { class: "row" }); row2.appendChild(go2); pa.appendChild(row2); }
+  main.appendChild(pa);
 
-  /* Übungsarbeit */
-  const ua = el("section", { class: "card" }); ua.innerHTML = `<h3>Übungsarbeit</h3><p>${N_UEB} Aufgaben, die nur für dich erzeugt werden${me ? "" : " (mit Aktivierungscode unter „Meine Erfolge“ werden die Zahlen fest an dich gebunden)"}. Löse sie im Heft, kontrolliere danach die Lösung und bewerte dich selbst. Zwei Aufgaben sind Heft-Aufgaben mit mehreren Schritten.</p>`;
-  const boxes = el("div", { class: "row" }); const cbs = [];
-  ids.forEach(k => { const l = el("label", { class: "row" }); const cb = el("input", { type: "checkbox" }); cb.checked = true; cb.value = k.id; cbs.push(cb); l.append(cb, document.createTextNode(" Kapitel " + k.nr + " · " + k.titel)); boxes.appendChild(l); });
-  const msg1 = el("p", { class: "muted" }); const go1 = el("button", { class: "btn big" }, "Übungsarbeit erzeugen");
-  go1.addEventListener("click", () => { const kids = cbs.filter(c => c.checked).map(c => c.value); if (!kids.length){ msg1.textContent = "Wähle mindestens ein Kapitel."; return; }
-    const n = ARB().filter(a => a.t === "ueb").length, seed = (me ? me.id : "gast" + Date.now()) + "|ueb|" + kids.join(",") + "|" + n;
-    const items = buildPaper(kids, seed); if (items.length < 4){ msg1.textContent = "Dafür sind noch zu wenige Level freigeschaltet. Schalte erst im Lernpfad mehr frei."; return; }
-    playPaper(items, { kids, titel: kids.length === 1 ? "Kapitel " + u.getK(kids[0]).nr : "bis Kapitel " + u.getK(kids[kids.length - 1]).nr }); });
-  ua.append(boxes, go1, msg1); main.appendChild(ua); }
+}
 function historyCard(){
   const last = ARB().slice(-5).reverse(); if (!last.length) return null;
-  return el("section", { class: "card" }, `<h3>Probe- und Übungsarbeiten, die du geschafft hast</h3>` + last.map(a => `<div class="topic"><span>${fmt(a.d)} · ${a.t === "probe" ? "Probearbeit" : "Übungsarbeit"}</span><span>${a.h} von ${a.n} gelöst${a.p ? `, ${a.p} teilweise` : ""}</span></div>`).join("")); }
+  return el("div", { class: "sub" }, `<h4>Probearbeiten, die du geschafft hast</h4>` + last.map(a => `<div class="topic"><span>${fmt(a.d)} · ${a.t === "probe" ? "Probearbeit" : "Gemischte Übung"}</span><span>${a.h} von ${a.n} gelöst${a.p ? `, ${a.p} teilweise` : ""}</span></div>`).join("")); }
 
 MM.Arbeit = { menuCards, historyCard, homeButtons, renderMenu, buildPaper, buildProbe, solHtml, playPaper, playProbe };
 })();

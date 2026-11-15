@@ -689,3 +689,49 @@ footer .fbtns{display:flex;gap:8px;flex-wrap:wrap}
 .station .ha-tag{position:absolute;top:-13px;left:14px;background:#f59e0b;color:#2a1a00;font-size:12px;font-weight:800;letter-spacing:.06em;padding:3px 11px;border-radius:999px;white-space:nowrap}
 .station.ha-on{border-color:#f59e0b;background:color-mix(in srgb,#f59e0b 11%,var(--surface));box-shadow:0 0 0 4px color-mix(in srgb,#f59e0b 22%,transparent)}
 .station.ha-done .ha-tag{background:transparent;color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 55%,var(--line));font-weight:700}
+
+/* ---------- Im Unterricht besprochen (dezent) ---------- */
+.tab .udot{width:7px;height:7px;border-radius:50%;background:var(--wave,#1d5bbd);opacity:.75;flex:none;align-self:flex-start;margin:11px 0 0 -4px}
+.tab[aria-pressed="true"] .udot{background:currentColor;opacity:.6}
+.station.bespr{border-color:color-mix(in srgb,#0d9488 55%,var(--line));background:color-mix(in srgb,#0d9488 5%,var(--surface))}
+.station.bespr.next{border-color:var(--wave)}
+
+/* ---------- Probearbeit als Blatt ---------- */
+.blatt .aufg h3{display:flex;align-items:center;gap:10px}
+.blatt .anr{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--bg);font-size:15px}
+.blatt .teile{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:14px}
+.blatt .q{display:flex;gap:10px;font-size:17px;line-height:1.55}
+.blatt .bu{font-weight:700;min-width:24px}
+.blatt .mlos{margin:8px 0 0 34px;padding:10px 14px;border-left:4px solid var(--ok);background:var(--ok-soft);border-radius:0 10px 10px 0}
+.blatt .mlos p{margin:0 0 6px;line-height:1.7}
+.blatt .mtag{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--ok);margin-bottom:4px}
+.blatt .gsvg{width:100%;max-width:400px;height:auto;display:block;background:var(--plot);border:1px solid var(--line);border-radius:10px;margin-top:6px}
+.blatt .tabwrap{overflow-x:auto}
+.blatt .wtab{border-collapse:collapse;margin:4px 0}
+.blatt .wtab th,.blatt .wtab td{border:1px solid var(--line);padding:6px 12px;text-align:center;font-weight:600}
+.blatt .wtab th{text-align:left;background:var(--plot)}
+.blatt .rate{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px dashed var(--line);padding-top:10px}
+.blatt .rate button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media print{
+  .noprint,.top,.bar,header,footer,.updbar{display:none!important}
+  body{background:#fff!important;color:#000!important}
+  .blatt{max-width:none;padding:0}
+  .blatt .card{border:0;border-radius:0;padding:6px 0;break-inside:avoid}
+  .blatt .mlos{background:none}
+}
+
+.blatt .ktag{margin-left:auto;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+
+/* ---------- Wiederholen: Bereiche mit Farbe und Symbol ---------- */
+.rep .sec{border-left:6px solid var(--sc)}
+.sec-ziel{--sc:#3b82f6}.sec-heute{--sc:#f97316}.sec-probe{--sc:#8b5cf6}.sec-stand{--sc:#22c55e}
+.rep .sec-heute{background:color-mix(in srgb,var(--sc) 8%,var(--surface))}
+.rep .sec-probe{background:color-mix(in srgb,var(--sc) 6%,var(--surface))}
+.rep .sec h3,.rep .sec>summary{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rep .sico{display:inline-flex;flex:none;width:34px;height:34px;border-radius:10px;align-items:center;justify-content:center;background:color-mix(in srgb,var(--sc) 18%,transparent);color:var(--sc)}
+.rep .sico .flameico{filter:none}
+.rep .cd{margin-left:auto;font-size:13px;font-weight:700;border-radius:999px;padding:2px 12px;background:color-mix(in srgb,var(--sc) 16%,transparent);color:var(--ink)}
+.rep details.sec>summary{cursor:pointer;font-weight:800;font-size:1.17em}
+.rep details.sec .sumtxt{font-size:14px;font-weight:600;margin-left:auto}
+.rep .stand{display:flex;flex-direction:column;gap:14px;margin-top:12px}
+.rep .sub h4{margin:0 0 6px;font-size:15px;color:var(--muted);letter-spacing:.02em}

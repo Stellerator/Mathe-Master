@@ -30,6 +30,7 @@
 <script src="js/nachschlagen.js"></script>
 <script src="js/wiederholung.js"></script>
 <script src="js/arbeit.js"></script>
+<script src="js/probeblatt.js"></script>
 <script src="js/hausaufgaben.js"></script>
 <script src="js/forder.js"></script>
 <script src="kapitel/liste.js"></script>
@@ -37,6 +38,7 @@
 <script src="kapitel/termine.js"></script>
 <script src="kapitel/hausaufgaben.js"></script>
 <script src="kapitel/forder.js"></script>
+<script src="kapitel/probeblaetter.js"></script>
 <script>MM.start();
 if("serviceWorker" in navigator){ window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").then(function(reg){ document.addEventListener("visibilitychange",function(){ if(!document.hidden) reg.update().catch(function(){}); }); }).catch(function(){}); }); }
 /* Update-Hinweis: Beim Start, beim Zurückkehren in die App und beim Wieder-Online-Gehen wird geprüft, ob kapitel/stand.js eine neuere Version meldet. */

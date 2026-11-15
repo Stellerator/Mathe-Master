@@ -4,4 +4,4 @@
    Von Hand nur ändern, wenn nötig. Das Format der Zeile darf sich nicht ändern.
    ============================================================ */
 window.MM = window.MM || {};
-MM.VERSION = "2.0"; MM.STAND = "14.11.2026";
+MM.VERSION = "2.0"; MM.STAND = "15.11.2026";

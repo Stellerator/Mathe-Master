@@ -6,5 +6,5 @@
    ============================================================ */
 window.MM = window.MM || {};
 MM.TERMINE = [
-  { id:"ka-2026-12-09", titel:"Klassenarbeit", datum:"2026-12-09", kapitel:["k1","k2","k3","k3v","k4"] }
+  { id:"ka-2026-12-09", titel:"Klassenarbeit", datum:"2026-12-09", kapitel:["k1","k2","k3","k3v","k4","k5"] }
 ];

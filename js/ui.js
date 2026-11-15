@@ -53,6 +53,8 @@ function loadChapters(done){
     document.head.appendChild(s); });
   fin(); }
 const meta=id=>MM.LISTE.find(e=>e.id===id);
+/* Vom Lehrer als „im Unterricht besprochen“ markiert (liste.js: besprochen:true oder Liste der Stationen, z. B. ["steck","gerade"]). Nur eine dezente Farbe am Rahmen, kein Text. */
+const besprochen=(id,key)=>{ const m=meta(id), b=m&&m.besprochen; return b===true||(Array.isArray(b)&&b.includes(key)); };
 const isOk=id=>status[id]==="ok";
 const fmtDate=iso=>{ const [y,m,d]=iso.split("-"); return `${+d}.${+m}.`; };
 
@@ -138,7 +140,7 @@ function renderHome(){
   if(teacher){ const tb=el("button",{class:"teacher"},"Lehrkraft-Modus: alles frei ✕"); tb.addEventListener("click",()=>setTeacher(false)); tabs.appendChild(tb); }
   const k=curK(); const chaps=el("div",{class:"chaps"});
   MM.LISTE.forEach(e=>{ const ok=isOk(e.id); const b=el("button",{class:"tab"+(ok?"":" soon"),"aria-pressed":String(ok&&k&&k.id===e.id),"aria-label":`Kapitel ${e.nr}: ${e.titel}`,title:e.titel},
-      `<span class="nr">${e.nr}</span><span class="tt">${e.titel}${ok?"":(status[e.id]==="ab"&&e.ab?` <span class="tag-s">ab ${fmtDate(e.ab)}</span>`:' <span class="tag-s">folgt</span>')}</span>`);
+      `<span class="nr">${e.nr}</span>${e.besprochen===true||(Array.isArray(e.besprochen)&&e.besprochen.length)?'<i class="udot" aria-hidden="true"></i>':""}<span class="tt">${e.titel}${ok?"":(status[e.id]==="ab"&&e.ab?` <span class="tag-s">ab ${fmtDate(e.ab)}</span>`:' <span class="tag-s">folgt</span>')}</span>`);
     if(!ok){ b.setAttribute("aria-disabled","true"); b.title="Wird später freigeschaltet"; } else b.addEventListener("click",()=>{ aktK=e.id; try{ localStorage.setItem(KAP_KEY,aktK); }catch(_){} renderHome(); });
     chaps.appendChild(b); });
   tabs.appendChild(chaps); requestAnimationFrame(()=>{ const sel=chaps.querySelector('[aria-pressed="true"]'); if(sel) chaps.scrollLeft=Math.max(0,sel.offsetLeft-12); });
@@ -163,6 +165,7 @@ function renderHome(){
     b.innerHTML=`${s===next?'<span class="badge-next">Als Nächstes</span>':""}<span class="num">${s.done?"✓":(s.open?i+1:LOCK)}</span><span class="eyebrow">${s.eyebrow}</span><h3>${s.titel}</h3><p>${s.kurz}</p><span class="stat">${stat}</span>`;
     if(s.kind==="ch"&&MM.Hausaufgaben){ const hm=MM.Hausaufgaben.mark(k.id,s.typ); if(hm){ b.classList.add(hm.open?"ha-on":"ha-done");
       const tag=el("span",{class:"ha-tag",title:hm.open?`Hausaufgabe, Abgabe bis ${fmtDate(hm.frist)}`:"Hausaufgabe erledigt"},hm.open?`HA · Level ${hm.levels.join(", ")}`:"HA ✓"); b.appendChild(tag); } }
+    if(besprochen(k.id,s.kind==="cards"?"steck":s.typ)) b.classList.add("bespr");
     if(s.open) b.addEventListener("click",s.go);
     else { b.setAttribute("aria-disabled","true"); b.addEventListener("click",()=>{ note.textContent=s.lock; note.className="cta-note warn"; }); }
     path.appendChild(b); });
