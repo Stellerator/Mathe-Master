@@ -735,3 +735,5 @@ footer .fbtns{display:flex;gap:8px;flex-wrap:wrap}
 .rep details.sec .sumtxt{font-size:14px;font-weight:600;margin-left:auto}
 .rep .stand{display:flex;flex-direction:column;gap:14px;margin-top:12px}
 .rep .sub h4{margin:0 0 6px;font-size:15px;color:var(--muted);letter-spacing:.02em}
+
+.nrow a.btn.off{opacity:.45;pointer-events:none}

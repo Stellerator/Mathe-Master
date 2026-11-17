@@ -19,7 +19,9 @@ const retry = g => { for (let q = 0; q < 300; q++){ const r = g(); if (r) return
 
 /* ---------- Stand ---------- */
 function state(h){ const all = HAS(); const s = all[h.id] = all[h.id] || { a: {}, p: null, m: null, done: "" };
-  s.f = h.frist; s.ti = h.titel; s.k = h.teile.length; return s; }
+  s.f = h.frist; s.ti = h.titel; s.k = h.teile.length;
+  /* Bekommt eine Hausaufgabe später mehr Teile, ist sie nicht mehr erledigt: den alten Zeitstempel verwerfen (sonst sähe es nach „fertig“ aus). */
+  s.dn = h.teile.filter((_, i) => partDone(h, s, i)).length; if (s.dn < h.teile.length) s.done = ""; return s; }
 function partDone(h, s, i){ const t = h.teile[i];
   if (t.typ === "app") return !!(s.a[i] && s.a[i].b >= schwelle(h, i));
   if (t.typ === "papier") return !!(s.p && s.p.v);

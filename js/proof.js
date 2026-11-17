@@ -203,6 +203,7 @@ function mergeX(list){ // list: [{t, x}] (mehrere Dateien einer Person): je Them
     d=Math.max(d,x.d); r=Math.max(r,x.r); if(x.z>z) z=x.z;
     x.a.forEach(q=>{ const key=[q.t,q.d,q.n,q.h,q.p].join("|"); if(!seen.has(key)){ seen.add(key); a.push(q); } });
     Object.keys(x.ha||{}).forEach(id=>{ const n=x.ha[id], c=ha[id]; if(!c){ ha[id]=JSON.parse(JSON.stringify(n)); return; }
+      if((n.k||0)!==(c.k||0)){ if((n.k||0)>(c.k||0)) ha[id]=JSON.parse(JSON.stringify(n)); return; } /* neuere Fassung der Hausaufgabe (mehr Teile) gewinnt */
       if(n.t&&(!c.t||n.t<c.t)){ ha[id]=JSON.parse(JSON.stringify(n)); return; } if(!n.t&&!c.t&&n.d>c.d) ha[id]=JSON.parse(JSON.stringify(n)); });
     Object.keys(x.fo||{}).forEach(k=>{ const o=fo[k]||"", n=x.fo[k], L=Math.max(o.length,n.length); let m=""; for(let i=0;i<L;i++) m+=(o[i]==="1"||n[i]==="1")?"1":"0"; fo[k]=m; }); });
   a.sort((p,q)=>(p.d<q.d?-1:p.d>q.d?1:0)); const last=list[list.length-1].x;

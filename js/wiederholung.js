@@ -91,7 +91,7 @@ function flameButton(){
 
 /* ---------- Startseite: Knopf ---------- */
 function homeButtons(){
-  const b = el("button", { class: "tab trophy", "aria-label": "Wiederholen", title: "Wiederholen und auf die Klassenarbeit üben" }, `<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a7 7 0 0 1 12-4.9"/><path d="M16.5 2.5v4h-4"/><path d="M18 11a7 7 0 0 1-12 4.9"/><path d="M5.5 19.5v-4h4"/></svg>`);
+  const b = el("button", { class: "tab trophy", "aria-label": "Wiederholen", title: "Wiederholen und auf die Klassenarbeit üben" }, `<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="11.5" r="7.5"/><circle cx="10.5" cy="11.5" r="3.8"/><path d="M10.5 11.5L18.5 3.5"/><path d="M14.8 3.5h3.7v3.7"/></svg>`);
   if (dueToday(plan()) && !(flameState())) b.appendChild(el("i", { class: "ndot", title: "Heute ist eine Runde empfohlen" }));
   b.addEventListener("click", renderRep); const f = flameButton(); return f ? [b, f] : [b]; }
 

@@ -22,7 +22,7 @@ function kapitel(){
   return (terminKapitel() || ok).filter(k => ok.includes(k) && inSlots.has(k)); }
 /* Kapitel der Klassenarbeit, die für die Schüler noch nicht sichtbar sind: Die Probearbeit wächst mit, sobald sie freigeschaltet werden. */
 function noch(){
-  const ok = U().okIds(), inSlots = new Set(cfg().slots.map(s => s.kapitel)), tk = terminKapitel(); return tk ? tk.filter(k => !ok.includes(k) && inSlots.has(k)) : []; }
+  const ok = U().okIds(), tk = terminKapitel(); return tk ? tk.filter(k => !ok.includes(k)) : []; }
 function nochText(){
   const L = noch().map(id => { const e = (MM.LISTE || []).find(x => x.id === id); return e ? e.nr : id; }); if (!L.length) return "";
   return L.length === 1 ? `Kapitel ${L[0]} kommt noch dazu.` : `Die Kapitel ${L.slice(0, -1).join(", ")} und ${L[L.length - 1]} kommen noch dazu.`; }
@@ -74,7 +74,7 @@ function show(o){
   const nAuf = items.length, nTeile = items.reduce((a, it) => a + it.task.teile.length, 0);
   const head = el("section", { class: "card" });
   head.innerHTML = `<span class="eyebrow">Probearbeit · Version ${n + 1}</span><h3>Alle Kapitel bis zur Klassenarbeit</h3>` +
-    `<p>${nAuf} Aufgaben aus den Kapiteln ${kNamen(kids)}, Bearbeitungszeit <b>${c.min} Minuten</b>. Bearbeite sie im Heft und schreibe so, dass man deinen Weg nachvollziehen kann, wie in der Klassenarbeit. Erst danach deckst du die Musterlösung auf.</p>` + (nochText() ? `<p class="muted">${nochText()} Die Probearbeit wird dann länger.</p>` : "");
+    `<p>${nAuf} Aufgaben aus den Kapiteln ${kNamen(kids)}, Bearbeitungszeit <b>${c.min} Minuten</b>. Bearbeite sie im Heft und schreibe so, dass man deinen Weg nachvollziehen kann, wie in der Klassenarbeit. Erst danach deckst du die Musterlösung auf.</p>` + (nochText() ? `<p class="muted">${nochText()}</p>` : "");
   const bar = el("div", { class: "row noprint" });
   const solBtn = el("button", { class: "btn big", "aria-pressed": "false" }, "Musterlösung anzeigen");
   const prt = el("button", { class: "btn ghost" }, "Drucken"); prt.addEventListener("click", () => window.print());

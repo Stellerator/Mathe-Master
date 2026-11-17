@@ -101,15 +101,15 @@ function sendModal(){
   if(cf.hinweis) box.appendChild(el("p",{class:"nhint"},cf.hinweis));
   const msg=el("p",{class:"nmsg"});
   const file=new File([JSON.stringify(f)],name,{type:"application/json"});
-  const done=txt=>{ ident.sig=Pr.sig({c:f.c,l:f.l,b:f.b}); ident.xs=Pr.xsig(f.x||null); ident.sent=Date.now(); saveIdent(); note(msg,txt,"ok"); MM.Fx.snd.card(); };
+  let open2=null; const done=txt=>{ if(open2){ open2.classList.remove("off"); open2.removeAttribute("aria-disabled"); } ident.sig=Pr.sig({c:f.c,l:f.l,b:f.b}); ident.xs=Pr.xsig(f.x||null); ident.sent=Date.now(); saveIdent(); note(msg,txt,"ok"); MM.Fx.snd.card(); };
   const canShare=!!(navigator.canShare&&navigator.share&&(()=>{ try{ return navigator.canShare({files:[file]}); }catch(e){ return false; } })());
-  const send=el("button",{class:"btn big"},canShare?"Senden …":"Datei speichern");
+  const send=el("button",{class:"btn big"},canShare?"1 · Senden …":"1 · Datei speichern");
   send.addEventListener("click",()=>{
     if(canShare){ navigator.share({files:[file]}).then(()=>done("Gesendet. Danke!")).catch(e=>{ if(e&&e.name==="AbortError") note(msg,"Abgebrochen. Es wurde nichts gesendet."); else note(msg,"Das Teilen hat nicht geklappt. Nimm „Datei speichern“ oder den Stand-Code.","bad"); }); }
-    else { download(file); if(cf.url) window.open(cf.url,"_blank","noopener"); done("Datei gespeichert."+(cf.url?" Lege sie jetzt im Abgabe-Ordner ab.":"")); } });
+    else { download(file); done("Datei gespeichert."+(cf.url?" Weiter mit Schritt 2: Öffne den Abgabe-Ordner und ziehe die gespeicherte Datei hinein.":"")); } });
   const acts=el("div",{class:"nrow"}); acts.appendChild(send);
-  if(canShare){ const d=el("button",{class:"btn ghost"},"Datei speichern"); d.addEventListener("click",()=>{ download(file); done("Datei gespeichert."); }); acts.appendChild(d); }
-  if(cf.url){ const a=el("a",{class:"btn ghost",href:cf.url,target:"_blank",rel:"noopener"},"Abgabe-Ordner öffnen ↗"); acts.appendChild(a); }
+  if(canShare){ const d=el("button",{class:"btn ghost"},"Datei speichern"); d.addEventListener("click",()=>{ download(file); done("Datei gespeichert."+(cf.url?" Weiter mit Schritt 2: Öffne den Abgabe-Ordner und ziehe die gespeicherte Datei hinein.":"")); }); acts.appendChild(d); }
+  if(cf.url){ open2=el("a",{class:"btn ghost off","aria-disabled":"true",href:cf.url,target:"_blank",rel:"noopener"},"2 · Abgabe-Ordner öffnen ↗"); acts.appendChild(open2); box.appendChild(el("p",{class:"muted",style:"margin:0;font-size:14px"},"Schritt 2: Im geöffneten Ordner die gespeicherte Datei hineinziehen oder über „Hochladen“ auswählen. Der Knopf wird aktiv, sobald die Datei gespeichert ist.")); }
   const cp=el("button",{class:"btn ghost"},"Stand-Code kopieren"); cp.addEventListener("click",()=>{ copyText(Pr.toCode(f)).then(()=>done("Stand-Code kopiert. Füge ihn dort ein, wo du abgibst.")); }); acts.appendChild(cp);
   box.append(acts,msg);
   const row=el("div",{class:"mrow"}); const cl=el("button",{class:"btn ghost"},"Schließen"); row.appendChild(cl); box.appendChild(row);
