@@ -10,5 +10,9 @@ MM.HAUSAUFGABEN = [
       { typ:"app", titel:"Steigungsdreieck", kapitel:"k3", challenge:"gerade", level:1, n:5, schwelle:3 },
       { typ:"app", titel:"Gerade durch zwei Punkte aufstellen", kapitel:"k3", challenge:"term", level:3, n:5, schwelle:3 },
       { typ:"app", titel:"Achsenschnittpunkte bestimmen", kapitel:"k3", challenge:"punkte", level:2, n:5, schwelle:3 }
+    ] },
+  { id:"ha02", titel:"Arbeitsblatt 2", start:"2026-11-17", frist:"2026-11-25",
+    teile:[
+      { typ:"papier", titel:"Blatt2_AufgabenZuLinearenFunktionen - Alle noch nicht bearbeiteten Aufgaben fertig machen" }
     ] }
 ];
